@@ -3,7 +3,7 @@ import { render, setupCanvas } from "./render.js";
 import { sound, music, silence } from "./audio.js";
 export function play(session, api, settings, color, onExit, onResult, toast) {
   const app = document.querySelector("#app");
-  app.innerHTML = `<main class="play-shell"><div class="play-top"><button id="pause">Ⅱ Пауза</button><span id="hud"></span><button id="exit">В меню</button></div><div class="play-stage ${settings.crt ? "crt" : ""}"><canvas id="game" aria-label="Игровое поле"></canvas></div><div class="controls"><div class="dpad"><button data-key="1" aria-label="Вверх">▲</button><button data-key="8" aria-label="Влево">◀</button><button data-key="4" aria-label="Вниз">▼</button><button data-key="2" aria-label="Вправо">▶</button></div><div class="action-buttons"><button data-key="32">ACT</button><button data-key="16">JUMP</button></div></div><div class="play-hint">WASD / СТРЕЛКИ · SPACE — ПРЫЖОК · E — ДЕЙСТВИЕ · ESC — ПАУЗА<br>Maze: ACT рядом с врагом, сундуком или подозрительным символом.</div><p class="play-hint" id="sync-status">Прогресс сохраняется автоматически</p></main>`;
+  app.innerHTML = `<main class="play-shell"><div class="play-top"><button id="pause">Ⅱ Пауза</button><span id="hud"></span><button id="exit">В меню</button></div><div class="play-stage ${settings.crt ? "crt" : ""}"><canvas id="game" aria-label="Игровое поле"></canvas></div><div class="controls"><div class="dpad" aria-label="Управление движением"><button class="dpad-up" data-key="1" aria-label="Вверх">▲</button><button class="dpad-left" data-key="8" aria-label="Влево">◀</button><span class="dpad-center" aria-hidden="true"></span><button class="dpad-right" data-key="2" aria-label="Вправо">▶</button><button class="dpad-down" data-key="4" aria-label="Вниз">▼</button></div><div class="action-buttons"><button class="action act" data-key="32" aria-label="Действие"><span>ACT</span><small>E</small></button><button class="action jump" data-key="16" aria-label="Прыжок"><span>JUMP</span><small>SPACE</small></button></div></div><div class="play-hint">WASD / СТРЕЛКИ · SPACE — ПРЫЖОК · E — ДЕЙСТВИЕ · ESC — ПАУЗА<br>Maze: ACT рядом с врагом, сундуком или подозрительным символом.</div><p class="play-hint" id="sync-status">Прогресс сохраняется автоматически</p></main>`;
   const c = setupCanvas(
       document.querySelector("#game"),
       768,
@@ -65,12 +65,19 @@ export function play(session, api, settings, color, onExit, onResult, toast) {
   window.addEventListener("blur", blur);
   document.addEventListener("visibilitychange", visibility);
   document.querySelectorAll("[data-key]").forEach((b) => {
+    const release = (e) => {
+      touch.delete(e.pointerId);
+      b.classList.remove("pressed");
+      try { b.releasePointerCapture(e.pointerId); } catch {}
+    };
     b.onpointerdown = (e) => {
       e.preventDefault();
       b.setPointerCapture(e.pointerId);
       touch.set(e.pointerId, Number(b.dataset.key));
+      b.classList.add("pressed");
     };
-    b.onpointerup = b.onpointercancel = (e) => touch.delete(e.pointerId);
+    b.onpointerup = b.onpointercancel = b.onlostpointercapture = release;
+    b.oncontextmenu = (e) => e.preventDefault();
   });
   let start;
   const canvas = c.canvas;
