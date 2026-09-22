@@ -150,6 +150,14 @@ export function render(c, s, color = "#bdff70", settings = {}, skin = {}) {
         else if ((x * 17 + y * 3) % 7 === 0)
           rect(c, x * z + 3, y * z + z * 0.7, z * 0.4, 2, "#39344a");
       }
+    for (const wall of s.fakeWalls || []) {
+      if (!wall.revealed) {
+        tile(c, wall.x * z, wall.y * z, z, skin.terrain || "#47445e", 1);
+        // tiny visual tell: a cracked seam, visible only to attentive players
+        rect(c, wall.x*z+z*.48, wall.y*z+z*.18, Math.max(1,z*.06), z*.25, "#ffffff16");
+        rect(c, wall.x*z+z*.34, wall.y*z+z*.43, z*.18, Math.max(1,z*.06), "#0005");
+      }
+    }
     for (const r of s.rooms) {
       if (r.type === "trap")
         rect(
