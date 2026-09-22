@@ -262,7 +262,7 @@ export function play(session, api, settings, skin, onExit, onResult, toast, mult
       (state.game === "maze" ? " · ⚿ " + state.keys + " · ● " + state.pelletsLeft + (state.exitOpen ? " · EXIT OPEN" : "") : "") +
       (state.game === "mines" ? " · ⚑ " + state.flags.length + "/12" : "") +
       (state.game === "merge2048" ? " · MAX " + Math.max(...state.board.flat()) : "") +
-      (state.game === "racer" ? " · LAP " + Math.min(state.lap,state.laps) + "/" + state.laps + " · P" + state.position + " · " + Math.round(state.speed*120) + " KM/H · ● " + state.coins : "") +
+      (state.game === "racer" ? " · P" + state.position + " · LAP " + Math.min(state.lap,state.laps) + "/" + state.laps + " · G" + state.gear + " · " + Math.round(state.speed*115) + " KM/H" : "") +
       (state.game === "tanks" ? " · ♥ " + state.player.hp + " · ENEMY " + state.bots.filter(x=>x.hp>0).length + " · ● " + state.coins : "");
     if (now - lastSave > 4000 && !busy) {
       lastSave = now;
