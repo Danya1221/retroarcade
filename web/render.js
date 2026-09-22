@@ -215,7 +215,7 @@ export function render(c, s, color = "#bdff70", settings = {}, skin = {}) {
       if (r.type === "rare" && s.rare)
         gem(c, r.x * z, r.y * z, z * 0.7, "#9ee7fb");
     }
-    tile(c, s.exit.x * z, s.exit.y * z, z, s.keys ? "#a4d967" : "#a68b53");
+    tile(c, s.exit.x * z, s.exit.y * z, z, s.keys && s.exitOpen ? "#a4d967" : "#a68b53");
     rect(
       c,
       s.exit.x * z + z * 0.45,
@@ -411,6 +411,11 @@ export function preview(canvas, game, hero = false) {
     actor(c, 12 * z, 7 * z, z * 1.5, "#c5a2ff");
     gem(c, 17 * z, 6 * z, z, "#f3d48c");
     actor(c, 7 * z, 10 * z, z, "#f38da9", 0, "enemy");
+  } else if (game === "mines") {
+    for(let y=1;y<6;y++)for(let x=3;x<9;x++){tile(c,x*z,y*z,z-2,"#3c5664",1);if((x+y)%5===0)gem(c,x*z+z*.25,y*z+z*.25,z*.5,"#ff6d78")}
+    actor(c,11*z,5*z,z*1.3,"#72d7ff");
+  } else if (game === "merge2048") {
+    const vals=[2,4,8,16,32,64,128,256];for(let i=0;i<8;i++){const x=5+i%4*3,y=3+Math.floor(i/4)*3;tile(c,x*z,y*z,z*2.4,"hsl("+(55+i*18)+" 55% 38%)",1);c.fillStyle="#fff";c.font="bold "+(z*.65)+"px monospace";c.fillText(vals[i],x*z+z*.65,y*z+z*1.4)}
   } else {
     for (let x = 0; x < 26; x++) {
       if (x < 9 || x > 12)
