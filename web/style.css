@@ -1209,3 +1209,17 @@ button.primary{box-shadow:0 0 28px var(--glow),inset 0 1px #fff8}
 @media(max-width:360px){.retro-home{padding-left:5px;padding-right:5px}.retro-game-meta b{font-size:8px}.retro-logo>img{height:72px}.retro-player img{width:32px;height:32px}.retro-settings{width:38px}.mobile-arcade-nav button{font-size:6px}}
 @media(min-width:761px){.retro-games{grid-template-columns:repeat(3,minmax(0,1fr))}.retro-game-screen{aspect-ratio:1.35}}
 @media(prefers-reduced-motion:reduce){.retro-logo{animation:none}.retro-game{transition:none}}
+
+/* retro-ui sprite corrections after visual asset inspection */
+.retro-room-bg{opacity:.72;object-position:center top}
+.retro-logo>img{width:min(88%,390px);height:auto;max-height:160px;object-fit:contain;filter:none}
+.retro-logo p{display:none}
+.retro-avatar-frame{width:42px;height:42px;display:grid;place-items:center;border:2px solid #557eb6;background:#111a2b;box-shadow:inset 0 0 0 2px #050812;color:#ff9b31;font:900 11px monospace}
+.game-cover-sprite{position:absolute;inset:0;overflow:hidden;display:block;background:#07101a}
+.game-cover-sprite img{position:absolute;width:200%;height:200%;max-width:none;object-fit:fill;image-rendering:pixelated}
+.sprite-snake img{left:0;top:0}.sprite-platformer img{left:-100%;top:0}.sprite-tanks img{left:0;top:-100%}.sprite-racer img{left:-100%;top:-100%}
+.retro-game-screen canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
+.asset-todo{position:absolute;right:4px;bottom:4px;z-index:2;padding:2px 3px;background:#05070bcc;color:#a8afba;font:5px monospace;letter-spacing:.4px}
+.loot-sprite{position:relative;display:block;width:82px;height:70px;overflow:hidden}.loot-sprite img{position:absolute;left:0;top:0;width:280px;height:auto;max-width:none;image-rendering:pixelated}
+.retro-loot>span:nth-child(2){padding-left:4px}
+@media(max-width:760px){.retro-logo>img{height:auto;max-height:112px}.retro-avatar-frame{width:36px;height:36px}.loot-sprite{width:58px;height:55px}.loot-sprite img{width:220px}}
