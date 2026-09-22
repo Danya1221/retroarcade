@@ -24,3 +24,8 @@ CREATE TABLE IF NOT EXISTS multiplayer_players (
  UNIQUE(room_id,slot)
 );
 CREATE INDEX IF NOT EXISTS multiplayer_room_status ON multiplayer_rooms(game,status,created_at DESC);
+
+ALTER TABLE multiplayer_players ADD COLUMN IF NOT EXISTS state jsonb NOT NULL DEFAULT '{}'::jsonb;
+ALTER TABLE multiplayer_players ADD COLUMN IF NOT EXISTS finished boolean NOT NULL DEFAULT false;
+ALTER TABLE multiplayer_players ADD COLUMN IF NOT EXISTS score integer NOT NULL DEFAULT 0;
+ALTER TABLE multiplayer_players ADD COLUMN IF NOT EXISTS finish_position integer;
