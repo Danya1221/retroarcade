@@ -41,17 +41,32 @@ function gem(c, x, y, z, color) {
   rect(c, x + z * 0.3, y + z * 0.2, z * 0.2, z * 0.2, "#fff9");
 }
 function background(c, w, h, color, t = 0) {
-  rect(c, 0, 0, w, h, color);
-  for (let i = 0; i < 40; i++) {
-    let x = (i * 137) % w,
-      y = (i * 79) % Math.max(1, h * 0.65);
-    rect(c, x, y, i % 4 === 0 ? 2 : 1, 2, "#cad0e52a");
+  const g = c.createLinearGradient(0, 0, 0, h);
+  g.addColorStop(0, color);
+  g.addColorStop(0.62, "#111722");
+  g.addColorStop(1, "#080b10");
+  c.fillStyle = g;
+  c.fillRect(0, 0, w, h);
+  for (let i = 0; i < 55; i++) {
+    const x = (i * 137 + t * (i % 3 === 0 ? .06 : .025)) % w,
+      y = (i * 79) % Math.max(1, h * 0.68),
+      pulse = .35 + .65 * Math.abs(Math.sin((t + i * 17) / 55));
+    c.fillStyle = `rgba(220,235,255,${.05 + pulse * .12})`;
+    c.fillRect(x, y, i % 7 === 0 ? 2 : 1, i % 5 === 0 ? 2 : 1);
   }
   for (let i = 0; i < 8; i++) {
     const x = (i * w) / 7 - ((t * 0.15) % 100);
     rect(c, x, h * 0.5 - (i % 3) * 30, w / 7 - 10, h, "#0002");
     rect(c, x + 4, h * 0.55 - (i % 3) * 30, 8, 18, "#bdff7010");
   }
+  const vignette = c.createRadialGradient(w / 2, h * .45, h * .12, w / 2, h * .45, Math.max(w, h) * .7);
+  vignette.addColorStop(0, "#0000");
+  vignette.addColorStop(1, "#00000066");
+  c.fillStyle = vignette;
+  c.fillRect(0, 0, w, h);
+}
+function directionsForRender(dir) {
+  return [[0,-1],[1,0],[0,1],[-1,0]][dir] || [1,0];
 }
 export function render(c, s, color = "#bdff70", settings = {}) {
   const w = c.canvas.width,
@@ -82,21 +97,41 @@ export function render(c, s, color = "#bdff70", settings = {}) {
     if (s.bonus) gem(c, s.bonus.x * z, s.bonus.y * z, z * 0.8, "#c69eff");
     for (const p of s.walls) tile(c, p.x * z, p.y * z, z, "#74566f", 1);
     const snakeBody = s._visualBody || s.body;
-    snakeBody.forEach((p, i) => {
-      rect(
-        c,
-        p.x * z + 2,
-        p.y * z + 2,
-        z - 4,
-        z - 4,
-        i === 0 ? color : "#649842",
-      );
-      rect(c, p.x * z + 5, p.y * z + 4, z - 10, 3, "#fff4");
-      if (i === 0) {
-        rect(c, p.x * z + z * 0.3, p.y * z + z * 0.3, 3, 4, "#152215");
-        rect(c, p.x * z + z * 0.65, p.y * z + z * 0.3, 3, 4, "#152215");
+    if (snakeBody.length) {
+      c.save();
+      c.lineCap = "round";
+      c.lineJoin = "round";
+      c.shadowColor = color;
+      c.shadowBlur = z * .45;
+      c.strokeStyle = "#649842";
+      c.lineWidth = z * .68;
+      c.beginPath();
+      snakeBody.forEach((p, i) => {
+        const x = (p.x + .5) * z, y = (p.y + .5) * z;
+        if (!i) c.moveTo(x, y); else c.lineTo(x, y);
+      });
+      c.stroke();
+      c.shadowBlur = 0;
+      c.strokeStyle = "#ffffff25";
+      c.lineWidth = Math.max(2, z * .10);
+      c.stroke();
+      c.restore();
+      const head = snakeBody[0];
+      const hx = (head.x + .5) * z, hy = (head.y + .5) * z;
+      c.save();
+      c.shadowColor = color; c.shadowBlur = z * .55;
+      c.fillStyle = color;
+      c.beginPath(); c.arc(hx, hy, z * .38, 0, Math.PI * 2); c.fill();
+      c.restore();
+      const [dx, dy] = directionsForRender(s.dir);
+      const px = -dy, py = dx;
+      for (const side of [-1, 1]) {
+        c.fillStyle = "#102014";
+        c.beginPath();
+        c.arc(hx + dx*z*.15 + px*z*.14*side, hy + dy*z*.15 + py*z*.14*side, Math.max(2,z*.055), 0, Math.PI*2);
+        c.fill();
       }
-    });
+    }
     if (s.food)
       gem(
         c,
