@@ -156,6 +156,14 @@ export function render(c, s, color = "#bdff70", settings = {}, skin = {}) {
         else if ((x * 17 + y * 3) % 7 === 0)
           rect(c, x * z + 3, y * z + z * 0.7, z * 0.4, 2, "#39344a");
       }
+    for (const dot of s.pellets || []) if(!dot.taken){
+      c.fillStyle="#f5e8c8"; c.beginPath(); c.arc((dot.x+.5)*z,(dot.y+.5)*z,Math.max(1.4,z*.075),0,Math.PI*2); c.fill();
+    }
+    for (const power of s.powers || []) if(!power.taken){
+      const pulse=.22+Math.sin(s.tick/5)*.05;
+      c.save();c.shadowColor=color;c.shadowBlur=z*.65;c.fillStyle=color;c.beginPath();
+      c.arc((power.x+.5)*z,(power.y+.5)*z,z*pulse,0,Math.PI*2);c.fill();c.restore();
+    }
     for (const wall of s.fakeWalls || []) {
       if (!wall.revealed) {
         tile(c, wall.x * z, wall.y * z, z, skin.terrain || "#47445e", 1);
@@ -222,7 +230,9 @@ export function render(c, s, color = "#bdff70", settings = {}, skin = {}) {
         e.x * z,
         e.y * z,
         z,
-        e.type === "boss"
+        s.tick < s.powerUntil
+          ? "#7187ff"
+          : e.type === "boss"
           ? "#ff8066"
           : e.key
             ? "#edc368"
@@ -233,15 +243,14 @@ export function render(c, s, color = "#bdff70", settings = {}, skin = {}) {
         "enemy",
       );
     for (const p of s.projectiles) gem(c, p.x * z, p.y * z, z * 0.4, "#ffb267");
-    if (s.tick > s.invulnerable || s.tick % 6 < 3)
-      actor(
-        c,
-        s.player.x * z,
-        s.player.y * z,
-        z,
-        color,
-        Math.floor(s.tick / 8),
-      );
+    if (s.tick > s.invulnerable || s.tick % 6 < 3) {
+      // Maze hero is a dedicated "eater": a glowing disc with an animated mouth.
+      const px=(s.player.x+.5)*z, py=(s.player.y+.5)*z, dirs=[[0,-1],[1,0],[0,1],[-1,0]], d=dirs[s.facing??1], angle=Math.atan2(d[1],d[0]);
+      const bite=.20+Math.abs(Math.sin(s.tick/3))*.38;
+      c.save();c.shadowColor=color;c.shadowBlur=z*.5;c.fillStyle=color;c.beginPath();
+      c.moveTo(px,py);c.arc(px,py,z*.39,angle+bite,angle+Math.PI*2-bite);c.closePath();c.fill();c.restore();
+      c.fillStyle="#111722";c.beginPath();c.arc(px+d[1]*z*.12+d[0]*z*.08,py-d[0]*z*.12+d[1]*z*.08,Math.max(1.5,z*.055),0,Math.PI*2);c.fill();
+    }
     if (settings.lighting !== false) {
       const g = c.createRadialGradient(
         (s.player.x + 0.5) * z,
