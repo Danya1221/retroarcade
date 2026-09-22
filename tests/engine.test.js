@@ -20,8 +20,8 @@ test("5,000 maze seeds: keys before doors and exit reachable", () => {
     );
   }
 });
-test("five games replay identically after serialization", () => {
-  for (const game of ["snake", "maze", "platformer", "mines", "merge2048"]) {
+test("seven games replay identically after serialization", () => {
+  for (const game of ["snake", "maze", "platformer", "mines", "merge2048", "racer", "tanks"]) {
     let a = createGame(game, "replay"),
       b = structuredClone(a);
     const inputs = Array.from(
@@ -127,4 +127,14 @@ test("mines first reveal is safe and 2048 starts with two tiles", () => {
   const g=createGame("merge2048","tiles");
   assert.equal(g.board.flat().filter(Boolean).length,2);
   assert.ok(g.board.flat().every(v=>v===0||v===2||v===4));
+});
+
+test("racer advances and tanks can clear arena", () => {
+  const r=createGame("racer","race");
+  for(let i=0;i<120;i++) tick(r,16|2);
+  assert.ok(r.distance>0); assert.ok(r.speed>0);
+  const t=createGame("tanks","arena");
+  assert.equal(t.bots.length,6); assert.equal(t.player.hp,3);
+  t.bots.forEach(b=>b.hp=0); tick(t,0);
+  assert.equal(t.won,true); assert.equal(t.over,true);
 });
