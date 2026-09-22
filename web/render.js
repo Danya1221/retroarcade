@@ -68,6 +68,12 @@ function background(c, w, h, color, t = 0) {
     rect(c, x, h * 0.5 - (i % 3) * 30, w / 7 - 10, h, "#0002");
     rect(c, x + 4, h * 0.55 - (i % 3) * 30, 8, 18, "#bdff7010");
   }
+  // 32-bit-era atmospheric particles: subtle depth without obscuring play.
+  for(let i=0;i<18;i++){
+    const px=(i*193+t*(.08+(i%4)*.025))%w, py=(i*113+t*.018)%h, r=1+(i%3);
+    c.fillStyle=`rgba(255,255,255,${.025+(i%5)*.012})`;
+    c.beginPath();c.arc(px,py,r,0,Math.PI*2);c.fill();
+  }
   const vignette = c.createRadialGradient(w / 2, h * .45, h * .12, w / 2, h * .45, Math.max(w, h) * .7);
   vignette.addColorStop(0, "#0000");
   vignette.addColorStop(1, "#00000066");
@@ -247,8 +253,8 @@ export function render(c, s, color = "#bdff70", settings = {}, skin = {}) {
         e.x * z,
         e.y * z,
         z,
-        s.tick < s.powerUntil
-          ? "#7187ff"
+        s.tick < s.frightenedUntil
+          ? (s.frightenedUntil-s.tick<75 && s.tick%12<6 ? "#eef0ff" : "#7187ff")
           : e.type === "boss"
           ? "#ff8066"
           : e.key
