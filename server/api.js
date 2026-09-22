@@ -364,7 +364,7 @@ export async function api(req, path, b, q) {
     const mode = q.get("game") || "snake",
       period = q.get("period") || "all";
     if (
-      !["global", "snake", "maze", "daily", "platformer", "mines", "merge2048", "speedrun"].includes(
+      !["global", "snake", "maze", "daily", "platformer", "mines", "merge2048", "racer", "tanks", "speedrun"].includes(
         mode,
       ) ||
       !["today", "week", "all"].includes(period)
