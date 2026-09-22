@@ -36,7 +36,7 @@ export function validateCatalog(value) {
       ids.add(item.id);
       if (kind === "skins") {
         if (
-          !["snake", "maze", "platformer"].includes(item.game) ||
+          !["snake", "maze", "platformer", "mines", "merge2048", "racer", "tanks"].includes(item.game) ||
           !["COMMON", "RARE", "EPIC", "LEGENDARY", "SECRET"].includes(
             item.rarity,
           ) ||
