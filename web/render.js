@@ -101,7 +101,17 @@ export function render(c, s, color = "#bdff70", settings = {}, skin = {}) {
   const ox = (w - z * s.width) / 2,
     oy = (h - z * (s.game === "platformer" ? 17 : s.height)) / 2;
   c.translate(ox, oy);
-  if (s.game === "mines") {
+  if(s.game==="racer"){
+    const W=z*s.width,H=z*s.height,hz=H*.33;c.fillStyle="#75a9d2";c.fillRect(0,0,W,hz);c.fillStyle="#476d35";c.fillRect(0,hz,W,H-hz);
+    for(let i=0;i<28;i++){const y=hz+i*(H-hz)/28,p=(y-hz)/(H-hz),road=W*(.08+p*.48),cx=W/2+s.curve*W*.12*(1-p);c.fillStyle=i%2?"#30343a":"#383c42";c.fillRect(cx-road,y,road*2,(H-hz)/27+1);c.fillStyle=i%2?"#f3f0df":"#d84e48";c.fillRect(cx-road-z*.25,y,z*.25,(H-hz)/27+1);c.fillRect(cx+road,y,z*.25,(H-hz)/27+1)}
+    const car=(lane,depth,col)=>{const p=Math.max(.08,Math.min(1,1-depth/520)),y=hz+(H-hz)*(1-p*p),rw=W*(.08+p*.48),x=W/2+s.curve*W*.12*(1-p)+lane*rw*.72,sc=z*(.25+p*.72);c.save();c.translate(x,y);c.fillStyle="#111";c.fillRect(-sc*.65,0,sc*.28,sc*.45);c.fillRect(sc*.37,0,sc*.28,sc*.45);c.fillStyle=col;c.beginPath();c.moveTo(-sc*.55,sc*.35);c.lineTo(-sc*.35,-sc*.25);c.lineTo(sc*.35,-sc*.25);c.lineTo(sc*.55,sc*.35);c.closePath();c.fill();c.fillStyle="#dbe9f0";c.fillRect(-sc*.2,-sc*.12,sc*.4,sc*.18);c.restore()};
+    for(const a of s.cars)if(a.d>0&&a.d<520)car(a.lane,a.d,"#ffd45f");car(s.x,0,"#ef514c");
+    const cd=s.coinD-s.distance;if(cd>0&&cd<520){const p=Math.max(.08,1-cd/520),y=hz+(H-hz)*(1-p*p),rw=W*(.08+p*.48),x=W/2+s.coinLane*rw*.72;c.fillStyle="#ffd84e";c.beginPath();c.arc(x,y,z*(.08+p*.2),0,Math.PI*2);c.fill()}
+  } else if(s.game==="tanks"){
+    const W=z*s.width,H=z*s.height;c.fillStyle="#243628";c.fillRect(0,0,W,H);for(let y=0;y<s.height;y++)for(let x=0;x<s.width;x++)if((x*13+y*7)%19===0){c.fillStyle="#304a32";c.fillRect(x*z,y*z,z,z)}
+    const tank=(o,col)=>{const X=o.x*z,Y=o.y*z;c.save();c.translate(X,Y);c.rotate(o.dir*Math.PI/2);c.fillStyle="#151b16";c.fillRect(-z*.42,-z*.38,z*.18,z*.76);c.fillRect(z*.24,-z*.38,z*.18,z*.76);c.fillStyle=col;c.fillRect(-z*.3,-z*.32,z*.6,z*.64);c.fillStyle="#9aa46e";c.beginPath();c.arc(0,0,z*.22,0,Math.PI*2);c.fill();c.fillRect(-z*.06,-z*.55,z*.12,z*.6);c.restore()};
+    for(const b of s.bots)if(b.hp>0)tank(b,skin.enemy||"#b65d4e");tank(s.player,skin.color||"#d8c86c");for(const q of s.shots){c.fillStyle=q.enemy?"#ff695c":"#fff2a0";c.beginPath();c.arc(q.x*z,q.y*z,z*.09,0,Math.PI*2);c.fill()}for(const d of s.drops)if(!d.taken){c.fillStyle="#ffd84e";c.beginPath();c.arc(d.x*z,d.y*z,z*.16,0,Math.PI*2);c.fill()}
+  } else   if (s.game === "mines") {
     const cell=Math.min(z*1.9,56), bw=cell*9, bh=cell*9, sx=(z*s.width-bw)/2, sy=(z*s.height-bh)/2;
     const has=(a,x,y)=>a.includes(x+","+y), count=(x,y)=>{let n=0;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)if((dx||dy)&&has(s.mines,x+dx,y+dy))n++;return n};
     for(let y=0;y<9;y++)for(let x=0;x<9;x++){const X=sx+x*cell,Y=sy+y*cell,open=has(s.open,x,y),mine=has(s.mines,x,y);
