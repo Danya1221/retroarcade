@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS users (
  id bigint PRIMARY KEY, name text NOT NULL, username text, avatar text,
  created_at timestamptz NOT NULL DEFAULT now(), last_seen timestamptz NOT NULL DEFAULT now(),
- xp integer NOT NULL DEFAULT 0 CHECK(xp>=0), shards integer NOT NULL DEFAULT 0 CHECK(shards>=0),
+ xp integer NOT NULL DEFAULT 0 CHECK(xp>=0), shards integer NOT NULL DEFAULT 0 CHECK(shards>=0), coins integer NOT NULL DEFAULT 0 CHECK(coins>=0),
  streak integer NOT NULL DEFAULT 1, login_day date NOT NULL DEFAULT CURRENT_DATE,
  progress integer NOT NULL DEFAULT 1, pity integer NOT NULL DEFAULT 0,
  stats jsonb NOT NULL DEFAULT '{}', equipped jsonb NOT NULL DEFAULT '{}', banned boolean NOT NULL DEFAULT false
