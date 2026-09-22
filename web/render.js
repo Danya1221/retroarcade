@@ -86,10 +86,11 @@ function directionsForRender(dir) {
 export function render(c, s, color = "#bdff70", settings = {}, skin = {}) {
   const w = c.canvas.width,
     h = c.canvas.height;
+  const mazeZoom = s.game === "maze" ? 1.22 : 1;
   const z = Math.min(
     w / s.width,
     h / (s.game === "platformer" ? 17 : s.height),
-  );
+  ) * mazeZoom;
   background(
     c,
     w,
@@ -98,8 +99,14 @@ export function render(c, s, color = "#bdff70", settings = {}, skin = {}) {
     s.tick,
   );
   c.save();
-  const ox = (w - z * s.width) / 2,
+  let ox = (w - z * s.width) / 2,
     oy = (h - z * (s.game === "platformer" ? 17 : s.height)) / 2;
+  if (s.game === "maze") {
+    ox = w/2 - (s.player.x+.5)*z;
+    oy = h/2 - (s.player.y+.5)*z;
+    ox = Math.min(0,Math.max(w-z*s.width,ox));
+    oy = Math.min(0,Math.max(h-z*s.height,oy));
+  }
   c.translate(ox, oy);
   if(s.game==="racer"){
     const W=z*s.width,H=z*s.height,horizon=H*.31+s.hill*z*.7;
