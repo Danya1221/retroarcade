@@ -45,7 +45,9 @@ export function step(s, input) {
   if (s.eaten >= 5 && !s.bonus && s.tick % 180 === 0) {
     s.bonus = empty(s);
   }
-  const interval = Math.max(3, 9 - Math.floor(s.eaten / 6));
+  // Start noticeably faster and ramp up smoothly as the run progresses.
+  // At 30 ticks/s this moves every 0.20s initially instead of 0.30s.
+  const interval = Math.max(2, 6 - Math.floor(s.eaten / 7));
   if (s.tick % interval) return;
   s.moveTick = s.tick;
   const [dx, dy] = directions[s.dir],
