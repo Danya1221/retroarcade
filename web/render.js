@@ -241,8 +241,8 @@ export function render(c, s, color = "#bdff70", settings = {}, skin = {}) {
     c.save();
     c.translate(-camera * z, 0);
     for (const f of s.platforms) {
-      if (f.type === "falling" && f.trigger && s.tick - f.trigger > 22)
-        continue;
+      if (f.type === "falling" && f.trigger && s.tick - f.trigger > 22) continue;
+      if (f.type === "vanish" && Math.floor(s.tick / 45) % 2) continue;
       for (let i = 0; i < f.w; i++) {
         tile(c, (f.x + i) * z, f.y * z, z, skin.terrain || worlds[s.world].tile, 1);
         rect(c, (f.x + i) * z, f.y * z, z, 4, worlds[s.world].accent);
@@ -252,15 +252,11 @@ export function render(c, s, color = "#bdff70", settings = {}, skin = {}) {
       }
     }
     for (const t of s.traps) {
-      const on = t.type === "spikes" || s.tick % 100 < 45;
-      for (let i = 0; i < 3; i++) {
-        c.fillStyle = on ? "#ff8992" : "#845363";
-        c.beginPath();
-        c.moveTo((t.x + i / 3) * z, (t.y + 1) * z);
-        c.lineTo((t.x + i / 3 + 0.17) * z, t.y * z);
-        c.lineTo((t.x + i / 3 + 0.33) * z, (t.y + 1) * z);
-        c.fill();
-      }
+      const phase=s.tick%120, on=t.type==="spikes"||(t.type==="laser"&&phase<48)||(t.type==="crusher"&&phase>65)||(t.type==="fire"&&phase>22&&phase<72)||(t.type==="pendulum"&&Math.abs(Math.sin(s.tick/20))>.45);
+      if(t.type==="laser"){ rect(c,t.x*z,7*z,Math.max(3,z*.12),7*z,on?"#ff5e75":"#5b3945"); if(on){c.save();c.shadowColor="#ff5e75";c.shadowBlur=z;rect(c,t.x*z,7*z,Math.max(2,z*.08),7*z,"#ffb0b9");c.restore();}}
+      else if(t.type==="fire"){ for(let i=0;i<3;i++){const flame=(on?1:.35)*(1+Math.sin((s.tick+i*7)/5)*.18);c.fillStyle=i%2?"#ffcf63":"#ff6b45";c.beginPath();c.moveTo((t.x+i*.25)*z,14*z);c.lineTo((t.x+i*.25+.13)*z,(14-flame)*z);c.lineTo((t.x+i*.25+.28)*z,14*z);c.fill();}}
+      else if(t.type==="pendulum"){const a=Math.sin(s.tick/20)*1.05,px=(t.x+Math.sin(a)*3)*z,py=(7+Math.cos(a)*3)*z;c.strokeStyle="#8f93a4";c.lineWidth=3;c.beginPath();c.moveTo(t.x*z,6*z);c.lineTo(px,py);c.stroke();c.fillStyle="#ff8992";c.beginPath();c.arc(px,py,z*.35,0,Math.PI*2);c.fill();}
+      else { for (let i=0;i<3;i++){c.fillStyle=on?"#ff8992":"#845363";c.beginPath();c.moveTo((t.x+i/3)*z,(t.y+1)*z);c.lineTo((t.x+i/3+.17)*z,t.y*z);c.lineTo((t.x+i/3+.33)*z,(t.y+1)*z);c.fill();}}
     }
     for (const coin of s.coins)
       if (!coin.taken)
