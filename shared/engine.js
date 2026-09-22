@@ -2,7 +2,9 @@ import { seedNumber } from "./random.js";
 import * as snake from "../games/snake/index.js";
 import * as maze from "../games/maze/index.js";
 import * as platformer from "../games/platformer/index.js";
-const modules = { snake, maze, platformer };
+import * as mines from "../games/mines/index.js";
+import * as merge2048 from "../games/merge2048/index.js";
+const modules = { snake, maze, platformer, mines, merge2048 };
 export const TICK_RATE = 30;
 export function createGame(game, seed, level = 1, options = {}) {
   if (!modules[game]) throw Error("Unknown game");
