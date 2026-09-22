@@ -31,7 +31,7 @@ const settings = Object.assign(
   JSON.parse(localStorage.getItem("arcade-settings") || "{}"),
 );
 const names = {
-  games: "ИГРЫ",
+  games: "АРКАДА",
   leaderboard: "РЕЙТИНГ",
   challenges: "ИСПЫТАНИЯ",
   collection: "КОЛЛЕКЦИЯ",
@@ -99,7 +99,7 @@ async function refresh() {
 function shell() {
   const u = data.user;
   $("#app").innerHTML =
-    `<div class="layout"><aside class="sidebar"><div class="brand"><span class="brand-mark">R</span><span>RETRO<br>ARCADE<span style="color:var(--green)">.</span></span></div><nav>${Object.entries(
+    `<div class="layout arcade-shell"><aside class="sidebar console-rail"><div class="brand"><span class="brand-mark">R</span><span>RETRO<br>ARCADE<span style="color:var(--green)">.</span></span></div><nav>${Object.entries(
       names,
     )
       .filter(([k]) => k !== "admin" || u.admin)
@@ -109,7 +109,7 @@ function shell() {
       )
       .join(
         "",
-      )}</nav><div class="sidebar-foot"><span class="online-dot"></span>SYSTEM ONLINE<br>НАЙДИ СВОЮ ЧАСТОТУ<br><br>RETRO ARCADE / V.01</div></aside><main class="main"><header class="topbar"><span class="breadcrumbs">ARCADE / ${names[view] || "GAMES"}</span><div class="user-pill"><span style="color:var(--green)">◈ ${u.shards}</span><div class="avatar">${esc(u.name.slice(0, 2).toUpperCase())}</div><div>${esc(u.name)} <span class="muted">LVL ${u.level}</span><div class="xp-line"><i style="width:${Math.min(100, (u.xp % 250) / 2.5)}%"></i></div></div></div></header><div id="page"></div></main></div>`;
+      )}</nav><div class="sidebar-foot"><span class="online-dot"></span>SYSTEM ONLINE<br>НАЙДИ СВОЮ ЧАСТОТУ<br><br>RETRO ARCADE / V.01</div></aside><main class="main console-main"><header class="topbar console-topbar"><span class="breadcrumbs">ARCADE / ${names[view] || "GAMES"}</span><div class="user-pill"><span style="color:var(--green)">◈ ${u.shards}</span><div class="avatar">${esc(u.name.slice(0, 2).toUpperCase())}</div><div>${esc(u.name)} <span class="muted">LVL ${u.level}</span><div class="xp-line"><i style="width:${Math.min(100, (u.xp % 250) / 2.5)}%"></i></div></div></div></header><div class="console-screen-shell"><div class="screen-leds"><i></i><span>RETROGAME OS / ONLINE</span></div><div id="page"></div></div></main></div>`;
   bind("[data-nav]", (el) => navigate(el.dataset.nav));
 }
 async function navigate(next = "games") {
@@ -131,7 +131,7 @@ async function navigate(next = "games") {
 }
 function hub() {
   $("#page").innerHTML =
-    `${data.active ? `<div class="notice row"><span>Есть сохранённый забег · ${esc(data.active.game)}</span><button id="resume" class="small">Продолжить</button><button id="abandon" class="small">Завершить</button></div>` : ""}<section class="hero"><div class="hero-copy"><div class="eyebrow">INSERT COIN? JUST PRESS PLAY.</div><h1>Старая школа.<br><span>Новые секреты.</span></h1><p>Пять автоматов на одной частоте. Побей рекорд, найди скрытый проход — и попробуй ещё раз.</p><div class="hero-bottom"><button class="primary" data-play="maze" data-daily="true">DAILY MAZE ↗</button><small>ОДНА КАРТА ДЛЯ ВСЕХ<br>НОВЫЙ СИГНАЛ КАЖДЫЙ ДЕНЬ</small></div></div><canvas class="hero-art" id="hero-art"></canvas></section><div class="section-heading"><h2>Выбери свой автомат</h2><span class="mono">05 GAMES / ∞ ATTEMPTS</span></div><div class="game-grid">${data.games.map((g, i) => `<article class="game-card"><div class="game-art"><canvas data-preview="${g.id}"></canvas><span class="tag">0${i + 1} / ${g.tag}</span></div><div class="game-copy"><h3 style="color:${g.color}">${g.name}</h3><p>${g.description}</p><div class="game-meta"><span>${g.id === "platformer" ? "УРОВЕНЬ " + Math.min(9, data.user.progress) + " / 9" : "РЕКОРД " + (data.user.stats["best-" + g.id] || 0)}</span><span>${data.user.equipped[g.id] ? "CUSTOM" : "ORIGINAL"}</span></div><button data-play="${g.id}" ${g.enabled ? "" : "disabled"}>НАЧАТЬ ИГРУ <span>↗</span></button></div></article>`).join("")}</div><div class="bottom-grid"><div class="panel row"><div><div class="eyebrow">НЕ ТЕРЯЙ СИГНАЛ</div><h3 style="margin:9px 0">${data.user.streak} дн. подряд</h3><span class="muted" style="font-size:12px">Возвращайся. У каждого дня есть награда.</span></div><span style="font:45px monospace;color:#ffbd76">ϟ</span></div><div class="panel"><div class="eyebrow">В ТВОЁМ ИНВЕНТАРЕ</div><h3 style="margin:9px 0">${boxes()} неизвестных картриджей</h3><button class="small" id="to-collection">Открыть коллекцию →</button></div></div>`;
+    `${data.active ? `<div class="notice row"><span>Есть сохранённый забег · ${esc(data.active.game)}</span><button id="resume" class="small">Продолжить</button><button id="abandon" class="small">Завершить</button></div>` : ""}<section class="hero"><div class="hero-copy"><div class="eyebrow">INSERT COIN? JUST PRESS PLAY.</div><h1>Старая школа.<br><span>Новые секреты.</span></h1><p>Пять автоматов на одной частоте. Побей рекорд, найди скрытый проход — и попробуй ещё раз.</p><div class="hero-bottom"><button class="primary" data-play="maze" data-daily="true">DAILY MAZE ↗</button><small>ОДНА КАРТА ДЛЯ ВСЕХ<br>НОВЫЙ СИГНАЛ КАЖДЫЙ ДЕНЬ</small></div></div><canvas class="hero-art" id="hero-art"></canvas></section><div class="section-heading"><h2>Выбери свой автомат</h2><span class="mono">05 GAMES / ∞ ATTEMPTS</span></div><div class="game-grid console-library">${data.games.map((g, i) => `<article class="game-card cartridge-card"><div class="game-art"><canvas data-preview="${g.id}"></canvas><span class="tag">0${i + 1} / ${g.tag}</span></div><div class="game-copy"><h3 style="color:${g.color}">${g.name}</h3><p>${g.description}</p><div class="game-meta"><span>${g.id === "platformer" ? "УРОВЕНЬ " + Math.min(9, data.user.progress) + " / 9" : "РЕКОРД " + (data.user.stats["best-" + g.id] || 0)}</span><span>${data.user.equipped[g.id] ? "CUSTOM" : "ORIGINAL"}</span></div><button data-play="${g.id}" ${g.enabled ? "" : "disabled"}>НАЧАТЬ ИГРУ <span>↗</span></button></div></article>`).join("")}</div><div class="bottom-grid"><div class="panel row"><div><div class="eyebrow">НЕ ТЕРЯЙ СИГНАЛ</div><h3 style="margin:9px 0">${data.user.streak} дн. подряд</h3><span class="muted" style="font-size:12px">Возвращайся. У каждого дня есть награда.</span></div><span style="font:45px monospace;color:#ffbd76">ϟ</span></div><div class="panel"><div class="eyebrow">В ТВОЁМ ИНВЕНТАРЕ</div><h3 style="margin:9px 0">${boxes()} неизвестных картриджей</h3><button class="small" id="to-collection">Открыть коллекцию →</button></div></div>`;
   preview($("#hero-art"), "maze", true);
   document
     .querySelectorAll("[data-preview]")
