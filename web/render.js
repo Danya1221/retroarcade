@@ -23,28 +23,31 @@ function tile(c, x, y, z, color, kind = 0) {
   }
 }
 function actor(c, x, y, z, color, frame = 0, type = "player") {
-  const p = z / 8;
-  rect(c, x + p, y + 7 * p, 6 * p, 2 * p, "#0005");
-  if (type === "enemy") {
-    rect(c, x + p, y + 2 * p, 6 * p, 5 * p, color);
-    rect(c, x + 2 * p, y, 4 * p, 3 * p, color);
-    rect(c, x + 2 * p, y + 3 * p, p, p, "#fff");
-    rect(c, x + 5 * p, y + 3 * p, p, p, "#fff");
-    rect(c, x + (frame % 2 ? 1 : 2) * p, y + 7 * p, 2 * p, p, color);
-    rect(c, x + 5 * p, y + 7 * p, 2 * p, p, color);
+  const p=z/16, bob=(frame%2)*p;
+  c.save(); c.shadowColor="#0009"; c.shadowBlur=p*3;
+  c.fillStyle="#0006"; c.beginPath(); c.ellipse(x+8*p,y+15*p,6*p,2*p,0,0,Math.PI*2); c.fill(); c.restore();
+  if(type==="enemy"){
+    const g=c.createLinearGradient(x,y,x,y+14*p);g.addColorStop(0,color);g.addColorStop(1,"#252238");
+    c.fillStyle=g;c.beginPath();c.roundRect(x+3*p,y+3*p+bob,10*p,10*p,3*p);c.fill();
+    c.fillStyle=color;c.beginPath();c.roundRect(x+5*p,y+bob,6*p,6*p,2*p);c.fill();
+    c.fillStyle="#fff";c.fillRect(x+5*p,y+5*p+bob,2*p,2*p);c.fillRect(x+9*p,y+5*p+bob,2*p,2*p);
+    c.fillStyle="#1a1822";c.fillRect(x+6*p,y+5*p+bob,p,p);c.fillRect(x+10*p,y+5*p+bob,p,p);
+    c.fillStyle="#ffffff38";c.fillRect(x+5*p,y+2*p+bob,4*p,p);
     return;
   }
-  rect(c, x + 2 * p, y, 4 * p, 3 * p, color);
-  rect(c, x + p, y + 3 * p, 6 * p, 3 * p, color);
-  rect(c, x + 2 * p, y + 6 * p, 2 * p, 2 * p, color);
-  rect(c, x + 5 * p, y + (frame % 2 ? 5 : 6) * p, p, 2 * p, color);
-  rect(c, x + 3 * p, y + p, 3 * p, p, "#16222f");
-  rect(c, x + p, y + 3 * p, p, 2 * p, "#fff7");
+  const g=c.createLinearGradient(x,y,x,y+15*p);g.addColorStop(0,"#fff8");g.addColorStop(.15,color);g.addColorStop(1,"#252b38");
+  c.fillStyle=g;c.beginPath();c.roundRect(x+4*p,y+2*p+bob,8*p,12*p,3*p);c.fill();
+  c.fillStyle=color;c.beginPath();c.arc(x+8*p,y+4*p+bob,4*p,0,Math.PI*2);c.fill();
+  c.fillStyle="#18202c";c.fillRect(x+7*p,y+3*p+bob,4*p,2*p);
+  c.fillStyle="#ffffff66";c.fillRect(x+5*p,y+7*p+bob,2*p,5*p);
+  c.fillStyle="#202532";c.fillRect(x+4*p,y+13*p+bob,3*p,2*p);c.fillRect(x+10*p,y+13*p+(bob?0:p),3*p,2*p);
 }
-function gem(c, x, y, z, color) {
-  rect(c, x + z * 0.35, y, z * 0.3, z, color);
-  rect(c, x, y + z * 0.3, z, z * 0.4, color);
-  rect(c, x + z * 0.3, y + z * 0.2, z * 0.2, z * 0.2, "#fff9");
+function gem(c,x,y,z,color){
+  const cx=x+z/2,cy=y+z/2,g=c.createRadialGradient(cx-z*.12,cy-z*.15,z*.05,cx,cy,z*.52);
+  g.addColorStop(0,"#fff");g.addColorStop(.18,color);g.addColorStop(1,"#241d32");
+  c.save();c.shadowColor=color;c.shadowBlur=z*.28;c.fillStyle=g;c.beginPath();
+  c.moveTo(cx,cy-z*.5);c.lineTo(cx+z*.42,cy-z*.08);c.lineTo(cx+z*.25,cy+z*.42);c.lineTo(cx-z*.25,cy+z*.42);c.lineTo(cx-z*.42,cy-z*.08);c.closePath();c.fill();c.restore();
+  c.strokeStyle="#ffffff55";c.lineWidth=Math.max(1,z*.035);c.stroke();
 }
 function background(c, w, h, color, t = 0) {
   const g = c.createLinearGradient(0, 0, 0, h);
