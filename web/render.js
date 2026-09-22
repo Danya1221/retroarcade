@@ -68,7 +68,7 @@ function background(c, w, h, color, t = 0) {
 function directionsForRender(dir) {
   return [[0,-1],[1,0],[0,1],[-1,0]][dir] || [1,0];
 }
-export function render(c, s, color = "#bdff70", settings = {}) {
+export function render(c, s, color = "#bdff70", settings = {}, skin = {}) {
   const w = c.canvas.width,
     h = c.canvas.height;
   const z = Math.min(
@@ -79,7 +79,7 @@ export function render(c, s, color = "#bdff70", settings = {}) {
     c,
     w,
     h,
-    s.game === "platformer" ? worlds[s.world].sky : "#141b22",
+    skin.background || (s.game === "platformer" ? worlds[s.world].sky : "#141b22"),
     s.tick,
   );
   c.save();
@@ -90,7 +90,7 @@ export function render(c, s, color = "#bdff70", settings = {}) {
     for (let y = 0; y < 18; y++)
       for (let x = 0; x < 24; x++) {
         if (!x || !y || x === 23 || y === 17)
-          tile(c, x * z, y * z, z, "#304334");
+          tile(c, x * z, y * z, z, skin.terrain || "#304334");
         else if ((x + y) % 2 === 0) rect(c, x * z, y * z, z, z, "#ffffff03");
       }
     for (const p of s.moving || []) tile(c, p.x * z, p.y * z, z, "#ffb578", 1);
@@ -103,7 +103,7 @@ export function render(c, s, color = "#bdff70", settings = {}) {
       c.lineJoin = "round";
       c.shadowColor = color;
       c.shadowBlur = z * .45;
-      c.strokeStyle = "#649842";
+      c.strokeStyle = skin.terrain || "#649842";
       c.lineWidth = z * .68;
       c.beginPath();
       snakeBody.forEach((p, i) => {
@@ -144,7 +144,7 @@ export function render(c, s, color = "#bdff70", settings = {}) {
   if (s.game === "maze") {
     for (let y = 0; y < s.height; y++)
       for (let x = 0; x < s.width; x++) {
-        if (s.map[y][x]) tile(c, x * z, y * z, z, "#47445e", 1);
+        if (s.map[y][x]) tile(c, x * z, y * z, z, skin.terrain || "#47445e", 1);
         else if ((x * 17 + y * 3) % 7 === 0)
           rect(c, x * z + 3, y * z + z * 0.7, z * 0.4, 2, "#39344a");
       }
@@ -205,7 +205,7 @@ export function render(c, s, color = "#bdff70", settings = {}) {
             ? "#edc368"
             : e.type === "hunter"
               ? "#b39bed"
-              : "#f28dad",
+              : skin.enemy || "#f28dad",
         Math.floor(s.tick / 10),
         "enemy",
       );
@@ -242,7 +242,7 @@ export function render(c, s, color = "#bdff70", settings = {}) {
       if (f.type === "falling" && f.trigger && s.tick - f.trigger > 22)
         continue;
       for (let i = 0; i < f.w; i++) {
-        tile(c, (f.x + i) * z, f.y * z, z, worlds[s.world].tile, 1);
+        tile(c, (f.x + i) * z, f.y * z, z, skin.terrain || worlds[s.world].tile, 1);
         rect(c, (f.x + i) * z, f.y * z, z, 4, worlds[s.world].accent);
         if (f.type === "ground")
           for (let j = 1; j < 4; j++)
@@ -292,7 +292,7 @@ export function render(c, s, color = "#bdff70", settings = {}) {
         e.x * z,
         e.y * z,
         z * (e.type === "boss" ? 1.5 : 1),
-        e.type === "boss" ? "#e37cc1" : "#fa9977",
+        e.type === "boss" ? "#e37cc1" : (skin.enemy || "#fa9977"),
         Math.floor(s.tick / 8),
         "enemy",
       );
