@@ -130,8 +130,14 @@ export function render(c, s, color = "#bdff70", settings = {}, skin = {}) {
     for(const p of s.walls){for(let i=0;i<4;i++)leaf((p.x+.5+(i%2-.5)*.35)*z,(p.y+.5+(i>1?.18:-.18))*z,z*.3,(i-2)*.4)}
     const body=s._visualBody||s.body;
     if(body.length){
-      // Individual overlapping scales create the segmented 32-bit look from the target.
-      for(let i=body.length-1;i>=1;i--){const p=body[i],q=body[Math.max(0,i-1)],ang=Math.atan2(q.y-p.y,q.x-p.x),X=(p.x+.5)*z,Y=(p.y+.5)*z;c.save();c.translate(X,Y);c.rotate(ang);c.shadowColor="#6dff4f";c.shadowBlur=z*.12;const g=c.createRadialGradient(-z*.1,-z*.12,z*.03,0,0,z*.38);g.addColorStop(0,"#a9ef66");g.addColorStop(.48,"#63bb43");g.addColorStop(1,"#2f742f");c.fillStyle=g;c.beginPath();c.ellipse(0,0,z*.37,z*.31,0,0,Math.PI*2);c.fill();c.strokeStyle="#d7ff9b38";c.lineWidth=z*.035;c.stroke();c.restore()}
+      // Continuous snake body first, scales/details second. Never render it as separate balls.
+      c.save();c.lineCap="round";c.lineJoin="round";c.shadowColor="#6dff4f";c.shadowBlur=z*.14;
+      const bg=c.createLinearGradient(0,0,0,z*18);bg.addColorStop(0,"#75c94c");bg.addColorStop(1,"#347b32");
+      c.strokeStyle=bg;c.lineWidth=z*.64;c.beginPath();
+      body.forEach((p,i)=>{const X=(p.x+.5)*z,Y=(p.y+.5)*z;i?c.lineTo(X,Y):c.moveTo(X,Y)});c.stroke();
+      c.shadowBlur=0;c.strokeStyle="#cfff8a55";c.lineWidth=z*.1;c.stroke();c.restore();
+      // Subtle scale marks stay inside the connected body.
+      for(let i=1;i<body.length;i++){const p=body[i],q=body[Math.max(0,i-1)],ang=Math.atan2(q.y-p.y,q.x-p.x),X=(p.x+.5)*z,Y=(p.y+.5)*z;c.save();c.translate(X,Y);c.rotate(ang);c.strokeStyle="#173f2455";c.lineWidth=Math.max(1,z*.035);c.beginPath();c.arc(0,0,z*.22,-1.05,1.05);c.stroke();c.restore()}
       const h=body[0],[dx,dy]=directionsForRender(s.dir),px=-dy,py=dx,hx=(h.x+.5)*z,hy=(h.y+.5)*z,ang=Math.atan2(dy,dx);
       c.save();c.translate(hx+dx*z*.07,hy+dy*z*.07);c.rotate(ang);c.shadowColor="#77ff52";c.shadowBlur=z*.2;const hg=c.createLinearGradient(-z*.4,-z*.3,z*.42,z*.3);hg.addColorStop(0,"#b9f16b");hg.addColorStop(.55,"#67bd43");hg.addColorStop(1,"#34762f");c.fillStyle=hg;c.beginPath();c.ellipse(0,0,z*.46,z*.36,0,0,Math.PI*2);c.fill();c.restore();
       for(const side of[-1,1]){const ex=hx+dx*z*.2+px*z*.17*side,ey=hy+dy*z*.2+py*z*.17*side;c.fillStyle="#f5f3cf";c.beginPath();c.arc(ex,ey,z*.09,0,Math.PI*2);c.fill();c.fillStyle="#10170d";c.beginPath();c.arc(ex+dx*z*.028,ey+dy*z*.028,z*.044,0,Math.PI*2);c.fill()}
