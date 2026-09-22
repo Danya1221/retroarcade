@@ -23,6 +23,8 @@ export function init(s, options) {
     projectiles: [],
     chests: 0,
     powerUntil: 0,
+    frightenedUntil: 0,
+    exitOpen: false,
     lootedRooms: [],
     pellets,
     powers,
@@ -129,7 +131,7 @@ export function step(s, input) {
         p = { x: s.player.x + dx, y: s.player.y + dy };
       if (s.map[p.y]?.[p.x] === 0) {
         if (same(p, s.exit)) {
-          if (s.keys) {
+          if (s.keys && s.exitOpen) {
             s.keys--;
             s.won = true;
             s.over = true;
@@ -142,8 +144,9 @@ export function step(s, input) {
     if(dot){dot.taken=true;s.pelletsLeft--;s.score+=5;}
     const power=s.powers.find(q=>!q.taken&&same(q,s.player));
     if(power){
-      power.taken=true;s.powerUntil=s.tick+270;s.score+=50;
+      power.taken=true;s.frightenedUntil=s.tick+270;s.score+=50;
     }
+    if(s.pelletsLeft===0 && !s.exitOpen){s.exitOpen=true;s.score+=250;}
     if (s.keyMode === 0 && !s.keyTaken && same(s.player, s.key)) {
       s.keyTaken = true;
       s.keys++;
@@ -153,7 +156,7 @@ export function step(s, input) {
   if (s.tick % 12 === 0)
     for (const e of s.enemies) {
       const dist = distance(e, s.player);
-      const frightened = s.tick < s.powerUntil;
+      const frightened = s.tick < s.frightenedUntil;
       if (s.tick < (e.wake || 0)) continue;
       // Enemies outside the encounter radius patrol their own room instead of
       // knowing the player's position through walls.
@@ -198,7 +201,7 @@ export function step(s, input) {
     s.projectiles = s.projectiles.filter((p) => s.map[p.y]?.[p.x] === 0);
   }
   for(const e of [...s.enemies]) if(same(e,s.player)){
-    if(s.tick<s.powerUntil){
+    if(s.tick<s.frightenedUntil){
       s.score+=200;s.kills++;s.enemies=s.enemies.filter(x=>x!==e);
     } else hit(s);
   }
