@@ -7,7 +7,7 @@ export function play(session, api, settings, skin, onExit, onResult, toast) {
   const mobile = coarse || innerWidth < 820 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
   const app = document.querySelector("#app");
   app.innerHTML = `<main class="play-shell ${mobile ? "is-mobile" : "is-desktop"}"><div class="play-top"><button id="pause">Ⅱ Пауза</button><span id="hud"></span><button id="exit"><span class="menu-icon">▤</span> В меню</button></div><div class="play-stage ${settings.crt ? "crt" : ""}"><canvas id="game" aria-label="Игровое поле"></canvas></div><div class="controls"><div class="dpad" aria-label="Управление движением"><button class="dpad-up" data-key="1" aria-label="Вверх">▲</button><button class="dpad-left" data-key="8" aria-label="Влево">◀</button><span class="dpad-center" aria-hidden="true"></span><button class="dpad-right" data-key="2" aria-label="Вправо">▶</button><button class="dpad-down" data-key="4" aria-label="Вниз">▼</button></div><div class="action-buttons"><button class="action act" data-key="32" aria-label="Действие"><b class="action-symbol">♣</b><span>ACT</span><small>E</small></button><button class="action jump" data-key="16" aria-label="Прыжок"><b class="action-symbol">⌃</b><span>JUMP</span><small>SPACE</small></button></div></div><div class="play-hint control-strip"><span>▦ WASD / СТРЕЛКИ — движение</span><span>SPACE — ускорение</span><span>▣ E — действие</span><span>ESC — пауза</span></div><p class="play-hint" id="sync-status">Прогресс сохраняется автоматически</p></main>`;
-  const gameSize = session.state.game === "maze" ? [744,552] : session.state.game === "mines" ? [648,648] : session.state.game === "merge2048" ? [640,640] : session.state.game === "snake" ? [720,560] : [768,544];
+  const gameSize = session.state.game === "maze" ? [744,552] : session.state.game === "mines" ? [648,648] : session.state.game === "merge2048" ? [640,640] : session.state.game === "snake" ? [720,560] : session.state.game === "racer" ? [768,544] : session.state.game === "tanks" ? [768,544] : [768,544];
   const stage = document.querySelector(".play-stage");
   stage.style.setProperty("--game-ratio", gameSize[0] + " / " + gameSize[1]);
   const c = setupCanvas(document.querySelector("#game"), gameSize[0], gameSize[1]),
@@ -247,7 +247,9 @@ export function play(session, api, settings, skin, onExit, onResult, toast) {
       (state.hp !== undefined ? " · ♥ " + state.hp : "") +
       (state.game === "maze" ? " · ⚿ " + state.keys + " · ● " + state.pelletsLeft + (state.exitOpen ? " · EXIT OPEN" : "") : "") +
       (state.game === "mines" ? " · ⚑ " + state.flags.length + "/12" : "") +
-      (state.game === "merge2048" ? " · MAX " + Math.max(...state.board.flat()) : "");
+      (state.game === "merge2048" ? " · MAX " + Math.max(...state.board.flat()) : "") +
+      (state.game === "racer" ? " · LAP " + Math.min(state.lap,state.laps) + "/" + state.laps + " · P" + state.position + " · " + Math.round(state.speed*120) + " KM/H · ● " + state.coins : "") +
+      (state.game === "tanks" ? " · ♥ " + state.player.hp + " · ENEMY " + state.bots.filter(x=>x.hp>0).length + " · ● " + state.coins : "");
     if (now - lastSave > 4000 && !busy) {
       lastSave = now;
       if (inputs.length || pending) save();
