@@ -135,7 +135,9 @@ export function render(c, s, color = "#bdff70", settings = {}, skin = {}) {
       c.strokeStyle = skin.terrain || "#649842";
       c.lineWidth = z * .68;
       c.beginPath();
-      snakeBody.slice(1).forEach((p, i) => {
+      // Start the tube under the head, then continue through every body segment.
+      // This keeps the head visually attached while the interpolated snake turns.
+      snakeBody.forEach((p, i) => {
         const x = (p.x + .5) * z, y = (p.y + .5) * z;
         if (!i) c.moveTo(x, y); else c.lineTo(x, y);
       });
