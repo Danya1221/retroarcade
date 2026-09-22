@@ -127,29 +127,24 @@ async function navigate(next = "games") {
 function hub() {
   const order=["snake","platformer","racer","tanks","maze","merge2048","mines"];
   const labels={snake:"SNAKE",platformer:"PLATFORMER",racer:"RACING",tanks:"TANKS",maze:"MAZE",merge2048:"2048",mines:"MINES"};
-  const covers={snake:"IMG_9414.png",platformer:"IMG_9415.png",racer:"IMG_9416.png",tanks:"IMG_9417.png",maze:"IMG_9418.png",merge2048:"IMG_9419.png",mines:"IMG_9420.png"};
-  const cards=order.map(id=>data.games.find(g=>g.id===id)).filter(Boolean);
-  const asset="/assets/retro-ui/";
+  const sprite={snake:"sprite-snake",platformer:"sprite-platformer",tanks:"sprite-tanks",racer:"sprite-racer"};
+  const cards=order.map(id=>data.games.find(g=>g.id===id)).filter(Boolean), asset="/assets/retro-ui/";
   $("#page").innerHTML=`${data.active ? `<div class="notice row"><span>СОХРАНЁННЫЙ ЗАБЕГ · ${esc(data.active.game).toUpperCase()}</span><button id="resume" class="small">ПРОДОЛЖИТЬ</button><button id="abandon" class="small">ЗАВЕРШИТЬ</button></div>` : ""}
   <section class="retro-home">
-    <img class="retro-room-bg" src="${asset}IMG_9422.jpeg" alt="" aria-hidden="true">
+    <img class="retro-room-bg" src="${asset}IMG_9420.png" alt="" aria-hidden="true">
     <header class="retro-playerbar">
-      <button class="retro-player" id="profile-card"><img src="${asset}IMG_9412.png" alt=""><span><b>${esc(data.user.name)}</b><small>LV. ${data.user.level}</small><i><u style="width:${Math.min(100,(data.user.xp%250)/2.5)}%"></u></i></span></button>
+      <button class="retro-player" id="profile-card"><span class="retro-avatar-frame"><span>${esc(data.user.name.slice(0,2).toUpperCase())}</span></span><span><b>${esc(data.user.name)}</b><small>LV. ${data.user.level}</small><i><u style="width:${Math.min(100,(data.user.xp%250)/2.5)}%"></u></i></span></button>
       <div class="retro-head-actions"><button class="retro-coins" id="coin-shop"><span>COIN</span><b>${data.user.coins||0}</b></button><button class="retro-settings" id="home-settings">SET</button></div>
     </header>
-    <div class="retro-logo"><img src="${asset}IMG_9413.png" alt="Retro Arcade"><div class="retro-logo-fallback"><b>RETRO</b><strong>ARCADE</strong></div><p>PLAY <i>•</i> COLLECT <i>•</i> COMPETE</p></div>
+    <div class="retro-logo"><img src="${asset}IMG_9417.png" alt="Retro Arcade"><p>PLAY <i>•</i> COLLECT <i>•</i> COMPETE</p></div>
     <section class="retro-games" aria-label="Игры">
-      ${cards.map((g,i)=>`<button class="retro-game game-${g.id}" data-play="${g.id}" style="--game:${g.color||"#ff7b32"}" ${g.enabled?"":"disabled"}><span class="retro-game-screen"><img src="${asset}${covers[g.id]}" alt="" loading="${i>3?"lazy":"eager"}"><span class="screen-scan"></span></span><span class="retro-game-meta"><b>${labels[g.id]||esc(g.name)}</b><small>${g.id==="platformer"?"LV "+Math.min(9,data.user.progress):"BEST "+(data.user.stats["best-"+g.id]||0)}</small></span></button>`).join("")}
+      ${cards.map((g,i)=>`<button class="retro-game game-${g.id}" data-play="${g.id}" style="--game:${g.color||"#ff7b32"}" ${g.enabled?"":"disabled"}><span class="retro-game-screen">${sprite[g.id]?`<span class="game-cover-sprite ${sprite[g.id]}"><img src="${asset}IMG_9416.png" alt=""></span>`:`<canvas data-preview="${g.id}" aria-label="${labels[g.id]} preview"></canvas><span class="asset-todo">PIXEL COVER TODO</span>`}<span class="screen-scan"></span></span><span class="retro-game-meta"><b>${labels[g.id]||esc(g.name)}</b><small>${g.id==="platformer"?"LV "+Math.min(9,data.user.progress):"BEST "+(data.user.stats["best-"+g.id]||0)}</small></span></button>`).join("")}
     </section>
-    <button class="retro-loot" id="loot-banner"><img src="${asset}IMG_9421.png" alt=""><span><b>RANDOM LOOTBOX</b><small>NEW SKINS · NEW SURPRISES</small></span><i>›</i></button>
-    <img class="retro-room-decor" src="${asset}IMG_9423.jpeg" alt="" aria-hidden="true">
+    <button class="retro-loot" id="loot-banner"><span class="loot-sprite"><img src="${asset}IMG_9418.png" alt=""></span><span><b>RANDOM LOOTBOX</b><small>NEW SKINS · NEW SURPRISES</small></span><i>›</i></button>
   </section>`;
-  const broken=(img)=>{img.closest(".retro-game-screen,.retro-logo,.retro-loot,.retro-player")?.classList.add("asset-missing");img.hidden=true};
-  document.querySelectorAll(".retro-home img").forEach(img=>img.addEventListener("error",()=>broken(img),{once:true}));
+  document.querySelectorAll("[data-preview]").forEach(c=>preview(c,c.dataset.preview));
   bind("[data-play]",async el=>{el.classList.add("launching");await new Promise(r=>setTimeout(r,110));const g=el.dataset.play;if(["racer","tanks"].includes(g)){multiplayerChoice(g);return;}return start(g,1,false)});
-  $("#profile-card").onclick=()=>navigate("profile");
-  $("#home-settings").onclick=()=>navigate("settings");
-  $("#coin-shop").onclick=$("#loot-banner").onclick=()=>navigate("cases");
+  $("#profile-card").onclick=()=>navigate("profile");$("#home-settings").onclick=()=>navigate("settings");$("#coin-shop").onclick=$("#loot-banner").onclick=()=>navigate("cases");
   if(data.active){$("#resume").onclick=()=>launch(data.active);bind("#abandon",async()=>{const r=await api("/session/sync",{id:data.active.id,version:data.active.version,inputs:[],finish:true});if(r.conflict)throw Error("Забег изменился. Обнови страницу");await refresh();hub()})}
 }
 const boxes = () =>
