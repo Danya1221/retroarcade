@@ -51,6 +51,7 @@ export function step(s, input) {
   for (const f of s.platforms) {
     if (f.type === "moving") f.x = f.baseX + Math.sin(s.tick / 45) * 1.3;
     if (f.type === "falling" && f.trigger && s.tick - f.trigger > 22) continue;
+    if (f.type === "vanish" && Math.floor(s.tick / 45) % 2) continue;
     if (
       p.x + 0.7 > f.x &&
       p.x < f.x + f.w &&
@@ -96,8 +97,15 @@ export function step(s, input) {
     s.score += 150;
   }
   for (const t of s.traps) {
-    const on = t.type === "spikes" || s.tick % 100 < 45;
-    if (on && Math.abs(t.x - p.x) < 0.75 && p.y > 11.8) hit(s);
+    const phase = s.tick % 120;
+    const on =
+      t.type === "spikes" ||
+      (t.type === "laser" && phase < 48) ||
+      (t.type === "crusher" && phase > 65) ||
+      (t.type === "fire" && phase > 22 && phase < 72) ||
+      (t.type === "pendulum" && Math.abs(Math.sin(s.tick / 20)) > .45);
+    const reach = t.type === "pendulum" ? 1.25 : .8;
+    if (on && Math.abs(t.x - p.x) < reach && p.y > 10.7) hit(s);
   }
   for (const e of s.enemies) {
     if (["flying", "jumping"].includes(e.type))
