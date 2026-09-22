@@ -41,50 +41,28 @@ export const worlds = [
     accent: "#ffbd76",
   },
 ];
-export const skins = games.flatMap((g) => [
-  {
-    id: g.id + "-base",
-    game: g.id,
-    name: "Original",
-    rarity: "COMMON",
-    color: g.color,
-    cost: 0,
-  },
-  {
-    id: g.id + "-mint",
-    game: g.id,
-    name: "Mint circuit",
-    rarity: "RARE",
-    color: "#68ffd7",
-    cost: 60,
-  },
-  {
-    id: g.id + "-ember",
-    game: g.id,
-    name: "Ember tape",
-    rarity: "EPIC",
-    color: "#ff8766",
-    cost: 150,
-  },
-  {
-    id: g.id + "-ghost",
-    game: g.id,
-    name: "Ghost frequency",
-    rarity: "LEGENDARY",
-    color: "#eef0ff",
-    cost: 400,
-    hidden: true,
-  },
-  {
-    id: g.id + "-secret",
-    game: g.id,
-    name: "Signal 09",
-    rarity: "SECRET",
-    color: "#fe6fce",
-    cost: 0,
-    hidden: true,
-  },
-]);
+export const skins = [
+  ...[
+    ["snake","base","Original","COMMON","#b9ff66",0,"base","#142e31","#649842","#ff839b"],
+    ["snake","mint","Mint circuit","RARE","#68ffd7",60,"circuit","#102d32","#43bca3","#ffdf79"],
+    ["snake","ember","Ember tape","EPIC","#ff8766",150,"ember","#321b22","#c45f45","#ffd36b"],
+    ["snake","ghost","Ghost frequency","LEGENDARY","#eef0ff",400,"ghost","#18192c","#a7a9d8","#c69eff"],
+    ["snake","secret","Signal 09","SECRET","#fe6fce",0,"signal","#250f2b","#a33f91","#78f8ff"],
+    ["maze","base","Original","COMMON","#bc9bff",0,"base","#26233b","#f28dad","#47445e"],
+    ["maze","mint","Mint circuit","RARE","#68ffd7",60,"circuit","#102d32","#ffb66d","#285d5b"],
+    ["maze","ember","Ember tape","EPIC","#ff8766",150,"ember","#351b22","#ffd06e","#70424b"],
+    ["maze","ghost","Ghost frequency","LEGENDARY","#eef0ff",400,"ghost","#18192c","#c5a2ff","#565b7a"],
+    ["maze","secret","Signal 09","SECRET","#fe6fce",0,"signal","#260f30","#78f8ff","#67366f"],
+    ["platformer","base","Original","COMMON","#ffbd76",0,"base","#322735","#fa9977","#665d61"],
+    ["platformer","mint","Mint circuit","RARE","#68ffd7",60,"circuit","#102d32","#ffb56b","#39736a"],
+    ["platformer","ember","Ember tape","EPIC","#ff8766",150,"ember","#351b22","#ffd06e","#844a3d"],
+    ["platformer","ghost","Ghost frequency","LEGENDARY","#eef0ff",400,"ghost","#18192c","#c5a2ff","#666b87"],
+    ["platformer","secret","Signal 09","SECRET","#fe6fce",0,"signal","#260f30","#78f8ff","#733a78"],
+  ].map(([game,key,name,rarity,color,cost,theme,background,enemy,terrain]) => ({
+    id: game + "-" + key, game, name, rarity, color, cost, theme, background, enemy, terrain,
+    hidden: rarity === "LEGENDARY" || rarity === "SECRET",
+  })),
+];
 export const defaultConfig = {
   enabled: { snake: true, maze: true, platformer: true },
   xpPerScore: 0.08,
