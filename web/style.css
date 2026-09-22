@@ -951,3 +951,9 @@ button.primary{box-shadow:0 0 28px var(--glow),inset 0 1px #fff8}
 .play-stage:after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 55px #0007}
 @keyframes heroSweep{0%,65%{transform:translateX(-100%)}85%,100%{transform:translateX(100%)}}
 @media(max-width:760px){.hero{border-radius:15px}.game-card{border-radius:14px}.topbar{background:#11131aaa;position:sticky;top:0;z-index:8}.main{overflow:hidden}}
+
+/* Reliable touch targets inside Telegram/iOS WebView */
+.controls,.controls *{touch-action:none;-webkit-user-select:none;user-select:none}
+.dpad button,.action-buttons button{position:relative;z-index:3;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.dpad button:after,.action-buttons button:after{content:"";position:absolute;inset:-7px;border-radius:inherit}
+.play-stage canvas{touch-action:none;-webkit-user-select:none;user-select:none}
