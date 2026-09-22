@@ -1223,3 +1223,8 @@ button.primary{box-shadow:0 0 28px var(--glow),inset 0 1px #fff8}
 .loot-sprite{position:relative;display:block;width:82px;height:70px;overflow:hidden}.loot-sprite img{position:absolute;left:0;top:0;width:280px;height:auto;max-width:none;image-rendering:pixelated}
 .retro-loot>span:nth-child(2){padding-left:4px}
 @media(max-width:760px){.retro-logo>img{height:auto;max-height:112px}.retro-avatar-frame{width:36px;height:36px}.loot-sprite{width:58px;height:55px}.loot-sprite img{width:220px}}
+
+.mobile-arcade-nav button{display:grid;grid-template-rows:28px 14px;place-items:center}
+.nav-sprite{position:relative;display:block;width:31px;height:28px;overflow:hidden}.nav-sprite img{position:absolute;top:0;width:400px;height:auto;max-width:none;image-rendering:pixelated}
+.nav-home img{left:-9px}.nav-games img{left:-70px}.nav-skins img{left:-132px}.nav-score img{left:-198px}.nav-profile img{left:-335px}
+.mobile-arcade-nav button.active .nav-sprite{filter:drop-shadow(0 0 5px #ff8a25)}
