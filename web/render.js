@@ -106,7 +106,7 @@ export function render(c, s, color = "#bdff70", settings = {}, skin = {}) {
       c.strokeStyle = skin.terrain || "#649842";
       c.lineWidth = z * .68;
       c.beginPath();
-      snakeBody.forEach((p, i) => {
+      snakeBody.slice(1).forEach((p, i) => {
         const x = (p.x + .5) * z, y = (p.y + .5) * z;
         if (!i) c.moveTo(x, y); else c.lineTo(x, y);
       });
@@ -118,12 +118,14 @@ export function render(c, s, color = "#bdff70", settings = {}, skin = {}) {
       c.restore();
       const head = snakeBody[0];
       const hx = (head.x + .5) * z, hy = (head.y + .5) * z;
+      const [dx, dy] = directionsForRender(s.dir);
       c.save();
       c.shadowColor = color; c.shadowBlur = z * .55;
       c.fillStyle = color;
-      c.beginPath(); c.arc(hx, hy, z * .38, 0, Math.PI * 2); c.fill();
+      c.beginPath();
+      c.ellipse(hx + dx * z * .08, hy + dy * z * .08, z * .42, z * .36, Math.atan2(dy, dx), 0, Math.PI * 2);
+      c.fill();
       c.restore();
-      const [dx, dy] = directionsForRender(s.dir);
       const px = -dy, py = dx;
       for (const side of [-1, 1]) {
         c.fillStyle = "#102014";
