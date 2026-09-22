@@ -1,7 +1,7 @@
 import { tick } from "/shared/engine.js";
 import { render, setupCanvas } from "./render.js";
 import { sound, music, silence } from "./audio.js";
-export function play(session, api, settings, skin, onExit, onResult, toast) {
+export function play(session, api, settings, skin, onExit, onResult, toast, multiplayer = null) {
   const color = skin?.color || "#bdff70";
   const coarse = matchMedia("(pointer: coarse)").matches;
   const mobile = coarse || innerWidth < 820 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -29,7 +29,11 @@ export function play(session, api, settings, skin, onExit, onResult, toast) {
     keys = new Set(),
     touch = new Map(),
     swipe = 0,
-    tapQueue = 0;
+    tapQueue = 0,
+    mpSeq = 0,
+    mpLastSend = 0,
+    mpPoll = 0,
+    remotePlayers = [];
   const keyMap = {
     ArrowUp: 1,
     KeyW: 1,
@@ -190,6 +194,7 @@ export function play(session, api, settings, skin, onExit, onResult, toast) {
           0,
         );
         tapQueue = 0;
+        if (multiplayer && performance.now()-mpLastSend>65) { mpLastSend=performance.now(); api("/multiplayer/input",{id:multiplayer.roomId,seq:++mpSeq,input}).catch(()=>{}); }
         const score = state.score,
           hp = state.hp;
         tick(state, input);
@@ -241,6 +246,8 @@ export function play(session, api, settings, skin, onExit, onResult, toast) {
       });
       state._visualBody = snakeVisual;
     }
+    if(multiplayer && now-mpPoll>180){mpPoll=now;api("/multiplayer/room?id="+multiplayer.roomId).then(x=>{remotePlayers=x.players.filter(p=>Number(p.slot)!==Number(multiplayer.slot));}).catch(()=>{});}
+    state._remotePlayers=remotePlayers;
     render(c, state, color, settings, skin);
     hud.textContent =
       String(state.score).padStart(5, "0") +
