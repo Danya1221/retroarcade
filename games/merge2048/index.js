@@ -1,0 +1,6 @@
+const eq=(a,b)=>a.every((r,y)=>r.every((v,x)=>v===b[y][x]));
+function spawn(s){const empty=[];for(let y=0;y<4;y++)for(let x=0;x<4;x++)if(!s.board[y][x])empty.push([x,y]);if(!empty.length)return;const r=(s.rng=(s.rng*1664525+1013904223)>>>0)/4294967296,[x,y]=empty[Math.floor(r*empty.length)];s.board[y][x]=r>.9?4:2}
+export function init(s){s.width=4;s.height=4;s.board=Array.from({length:4},()=>Array(4).fill(0));s.lastInput=0;spawn(s);spawn(s);return s}
+function line(a){const v=a.filter(Boolean),o=[];for(let i=0;i<v.length;i++){if(v[i]===v[i+1]){o.push(v[i]*2);i++}else o.push(v[i])}while(o.length<4)o.push(0);return o}
+function move(b,d){let n=b.map(r=>r.slice());if(d===8)n=n.map(line);if(d===2)n=n.map(r=>line(r.slice().reverse()).reverse());if(d===1){for(let x=0;x<4;x++){const l=line(n.map(r=>r[x]));for(let y=0;y<4;y++)n[y][x]=l[y]}}if(d===4){for(let x=0;x<4;x++){const l=line(n.map(r=>r[x]).reverse()).reverse();for(let y=0;y<4;y++)n[y][x]=l[y]}}return n}
+export function step(s,input){const d=[1,2,4,8].find(v=>input&v)||0;if(!d){s.lastInput=0;return}if(s.lastInput)return;s.lastInput=d;const n=move(s.board,d);if(!eq(n,s.board)){let before=s.board.flat().reduce((a,v)=>a+v,0);s.board=n;spawn(s);let after=s.board.flat().reduce((a,v)=>a+v,0);s.score+=Math.max(4,after-before);if(s.board.flat().some(v=>v>=2048)){s.won=true;s.over=true}}}
