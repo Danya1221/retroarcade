@@ -157,11 +157,12 @@ const server = createServer(async (req, res) => {
     if (!["GET", "HEAD"].includes(req.method))
       throw new ApiError(405, "Method not allowed");
     let relative = path === "/" ? "web/index.html" : path.slice(1);
-    if (!["web/", "shared/", "games/"].some((p) => relative.startsWith(p)))
+    if (relative.startsWith("assets/")) relative = "public/" + relative;
+    else if (!["web/", "shared/", "games/", "public/"].some((p) => relative.startsWith(p)))
       relative = "web/" + relative;
     const file = resolve(root, relative);
     if (
-      !["web", "shared", "games"].some((p) =>
+      !["web", "shared", "games", "public"].some((p) =>
         file.startsWith(resolve(root, p) + sep),
       )
     )
@@ -173,10 +174,14 @@ const server = createServer(async (req, res) => {
         ".js": "text/javascript",
         ".css": "text/css",
         ".svg": "image/svg+xml",
+        ".png": "image/png",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".webp": "image/webp",
         ".json": "application/json",
       }[extname(file)] || "application/octet-stream";
     res.writeHead(200, {
-      "Content-Type": mime + "; charset=utf-8",
+      "Content-Type": mime.startsWith("image/") ? mime : mime + "; charset=utf-8",
       "Cache-Control": "no-cache",
     });
     res.end(req.method === "HEAD" ? undefined : content);
