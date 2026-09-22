@@ -257,6 +257,16 @@ export async function api(req, path, b, q) {
       return { id: s.id, state: s.state, version: s.version + 1, result };
     });
   }
+  if (method === "POST" && path === "/api/loot/buy") {
+    return transaction(async (c) => {
+      const u = await lockedUser(c, user.id);
+      const price = 100;
+      if ((u.coins || 0) < price) fail(400, "Недостаточно монет");
+      await c.query("UPDATE users SET coins=coins-$2 WHERE id=$1", [u.id, price]);
+      await box(c, u.id, "arcade", 1);
+      return { ok: true, price };
+    });
+  }
   if (method === "POST" && path === "/api/loot/open") {
     if (!uuid(b.id)) fail(400, "Неверный идентификатор открытия");
     return transaction(async (c) => {
