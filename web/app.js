@@ -395,6 +395,13 @@ async function admin() {
     }
   });
 }
+async function mobileConsoleIntro(){
+  const mobile=matchMedia("(pointer: coarse)").matches || innerWidth<820;
+  if(!mobile || sessionStorage.getItem("console-intro")) return;
+  sessionStorage.setItem("console-intro","1");
+  $("#app").innerHTML=`<div class="console-intro"><div class="console-device"><div class="console-speaker"></div><div class="console-screen"><div class="console-glow"></div><div class="console-logo">RETRO<br><span>ARCADE</span></div><div class="console-status">SYSTEM READY</div><div class="console-progress"><i></i></div></div><div class="console-controls"><span class="console-cross">✚</span><span class="console-buttons">● ●</span></div></div><div class="console-caption">INSERT YOURSELF</div></div>`;
+  await new Promise(r=>setTimeout(r,1850));
+}
 async function boot() {
   try {
     const tg = window.Telegram?.WebApp;
@@ -411,6 +418,7 @@ async function boot() {
       sessionStorage.setItem("arcade-token", token);
     }
     await refresh();
+    await mobileConsoleIntro();
     await navigate();
     if (localStorage.getItem("pending-loot")) {
       toast("Восстанавливаю результат открытия");
