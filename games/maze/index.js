@@ -1,7 +1,15 @@
 import { generate } from "./generator.js";
 import { direction, directions, same, random } from "../../shared/random.js";
 export function init(s, options) {
-  Object.assign(s, generate(s.seed, options.rareEvent), {
+  const dungeon = generate(s.seed, options.rareEvent);
+  const pellets = [];
+  for (let y=1;y<dungeon.map.length-1;y++) for(let x=1;x<dungeon.map[y].length-1;x++)
+    if(dungeon.map[y][x]===0 && !(x===1&&y===1) && !(x===dungeon.exit.x&&y===dungeon.exit.y))
+      pellets.push({x,y,taken:false});
+  const powers = [pellets[Math.floor(pellets.length*.18)],pellets[Math.floor(pellets.length*.42)],pellets[Math.floor(pellets.length*.68)],pellets[Math.floor(pellets.length*.88)]]
+    .filter(Boolean).map(p=>({x:p.x,y:p.y,taken:false}));
+  for(const p of powers){const dot=pellets.find(d=>same(d,p));if(dot)dot.taken=true;}
+  Object.assign(s, dungeon, {
     width: 31,
     height: 23,
     player: { x: 1, y: 1 },
@@ -16,6 +24,10 @@ export function init(s, options) {
     chests: 0,
     powerUntil: 0,
     lootedRooms: [],
+    pellets,
+    powers,
+    pelletsLeft: pellets.filter(p=>!p.taken).length,
+    facing: 1,
   });
   return s;
 }
@@ -112,6 +124,7 @@ export function step(s, input) {
   if (s.tick % 5 === 0) {
     const d = direction(input);
     if (d >= 0) {
+      s.facing = d;
       const [dx, dy] = directions[d],
         p = { x: s.player.x + dx, y: s.player.y + dy };
       if (s.map[p.y]?.[p.x] === 0) {
@@ -125,6 +138,12 @@ export function step(s, input) {
         } else s.player = p;
       }
     }
+    const dot=s.pellets.find(q=>!q.taken&&same(q,s.player));
+    if(dot){dot.taken=true;s.pelletsLeft--;s.score+=5;}
+    const power=s.powers.find(q=>!q.taken&&same(q,s.player));
+    if(power){
+      power.taken=true;s.powerUntil=s.tick+270;s.score+=50;
+    }
     if (s.keyMode === 0 && !s.keyTaken && same(s.player, s.key)) {
       s.keyTaken = true;
       s.keys++;
@@ -134,11 +153,13 @@ export function step(s, input) {
   if (s.tick % 12 === 0)
     for (const e of s.enemies) {
       const dist = distance(e, s.player);
+      const frightened = s.tick < s.powerUntil;
       if (s.tick < (e.wake || 0)) continue;
       // Enemies outside the encounter radius patrol their own room instead of
       // knowing the player's position through walls.
       const alerted = dist <= (e.type === "hunter" ? 10 : e.type === "ranged" ? 8 : 7);
       let target = alerted ? s.player : e.home;
+      if (frightened) target = e.home;
       if (e.type === "guard" && dist > 4) target = e.home;
       if (e.type === "hunter" && !s.keyTaken && !alerted) target = e.home;
       if (e.type === "ambusher" && alerted) {
@@ -150,7 +171,9 @@ export function step(s, input) {
         .filter((p)=>s.map[p.y]?.[p.x]===0 && !same(p,s.exit) &&
           !s.enemies.some((other)=>other!==e && same(other,p)));
       if (!choices.length) continue;
-      if (e.type === "ranged" && alerted) {
+      if (frightened) {
+        choices.sort((a,b)=>distance(b,s.player)-distance(a,s.player));
+      } else if (e.type === "ranged" && alerted) {
         if (dist < 9 && (e.x===s.player.x || e.y===s.player.y) && s.tick % 36===0)
           s.projectiles.push({x:e.x,y:e.y,dx:Math.sign(s.player.x-e.x),dy:Math.sign(s.player.y-e.y)});
         // Ranged enemies actively back away if the player gets close.
@@ -174,7 +197,11 @@ export function step(s, input) {
     }
     s.projectiles = s.projectiles.filter((p) => s.map[p.y]?.[p.x] === 0);
   }
-  if (s.enemies.some((e) => same(e, s.player))) hit(s);
+  for(const e of [...s.enemies]) if(same(e,s.player)){
+    if(s.tick<s.powerUntil){
+      s.score+=200;s.kills++;s.enemies=s.enemies.filter(x=>x!==e);
+    } else hit(s);
+  }
   // Pulsing hazard room, visibly lit before activation.
   if (
     s.tick % 90 < 25 &&
