@@ -133,28 +133,14 @@ async function navigate(next = "games") {
 }
 function hub() {
   $("#page").innerHTML =
-    `${data.active ? `<div class="notice row"><span>Есть сохранённый забег · ${esc(data.active.game)}</span><button id="resume" class="small">Продолжить</button><button id="abandon" class="small">Завершить</button></div>` : ""}<section class="hero"><div class="hero-copy"><div class="eyebrow">INSERT COIN? JUST PRESS PLAY.</div><h1>Старая школа.<br><span>Новые секреты.</span></h1><p>Пять автоматов на одной частоте. Побей рекорд, найди скрытый проход — и попробуй ещё раз.</p><div class="hero-bottom"><button class="primary" data-play="maze" data-daily="true">DAILY MAZE ↗</button><small>ОДНА КАРТА ДЛЯ ВСЕХ<br>НОВЫЙ СИГНАЛ КАЖДЫЙ ДЕНЬ</small></div></div><canvas class="hero-art" id="hero-art"></canvas></section><div class="section-heading"><h2>Выбери свой автомат</h2><span class="mono">05 GAMES / ∞ ATTEMPTS</span></div><div class="game-grid console-library">${data.games.map((g, i) => `<article class="game-card cartridge-card"><div class="game-art"><canvas data-preview="${g.id}"></canvas><span class="tag">0${i + 1} / ${g.tag}</span></div><div class="game-copy"><h3 style="color:${g.color}">${g.name}</h3><p>${g.description}</p><div class="game-meta"><span>${g.id === "platformer" ? "УРОВЕНЬ " + Math.min(9, data.user.progress) + " / 9" : "РЕКОРД " + (data.user.stats["best-" + g.id] || 0)}</span><span>${data.user.equipped[g.id] ? "CUSTOM" : "ORIGINAL"}</span></div><button data-play="${g.id}" ${g.enabled ? "" : "disabled"}>НАЧАТЬ ИГРУ <span>↗</span></button></div></article>`).join("")}</div><div class="bottom-grid"><div class="panel row"><div><div class="eyebrow">НЕ ТЕРЯЙ СИГНАЛ</div><h3 style="margin:9px 0">${data.user.streak} дн. подряд</h3><span class="muted" style="font-size:12px">Возвращайся. У каждого дня есть награда.</span></div><span style="font:45px monospace;color:#ffbd76">ϟ</span></div><div class="panel"><div class="eyebrow">В ТВОЁМ ИНВЕНТАРЕ</div><h3 style="margin:9px 0">${boxes()} неизвестных картриджей</h3><button class="small" id="to-collection">Открыть коллекцию →</button></div></div>`;
-  preview($("#hero-art"), "maze", true);
-  document
-    .querySelectorAll("[data-preview]")
-    .forEach((c) => preview(c, c.dataset.preview));
-  bind("[data-play]", (el) =>
-    start(el.dataset.play, 1, el.dataset.daily === "true"),
-  );
-  $("#to-collection").onclick = () => navigate("collection");
-  if (data.active) {
-    $("#resume").onclick = () => launch(data.active);
-    bind("#abandon", async () => {
-      const r = await api("/session/sync", {
-        id: data.active.id,
-        version: data.active.version,
-        inputs: [],
-        finish: true,
-      });
-      if (r.conflict) throw Error("Забег изменился. Обнови страницу");
-      await refresh();
-      hub();
-    });
+    `${data.active ? `<div class="notice row"><span>СОХРАНЁННЫЙ ЗАБЕГ · ${esc(data.active.game).toUpperCase()}</span><button id="resume" class="small">ПРОДОЛЖИТЬ</button><button id="abandon" class="small">ЗАВЕРШИТЬ</button></div>` : ""}<section class="console-home"><div class="console-home-head"><div><div class="eyebrow">SELECT GAME / PLAYER 01</div><h1>Выбери игру</h1></div><div class="home-wallet"><b>● ${data.user.coins||0}</b><span>МОНЕТЫ</span></div></div><div class="game-selector">${data.games.map((g,i)=>`<button class="game-tile" data-play="${g.id}" ${g.enabled?"":"disabled"} style="--accent:${g.color}"><canvas data-preview="${g.id}"></canvas><span class="game-number">0${i+1}</span><div><small>${g.tag}</small><strong>${g.name}</strong><em>${g.id==="platformer"?"LEVEL "+Math.min(9,data.user.progress)+"/9":"BEST "+(data.user.stats["best-"+g.id]||0)}</em></div><i>▶</i></button>`).join("")}</div><div class="console-actions"><button class="console-action daily-action" data-play="maze" data-daily="true"><b>DAILY</b><span>НОВЫЙ ЛАБИРИНТ</span><i>↗</i></button><button class="console-action" id="home-cases"><b>КЕЙСЫ</b><span>${boxes()} В ИНВЕНТАРЕ</span><i>▣</i></button><button class="console-action" id="home-skins"><b>СКИНЫ</b><span>${data.owned.length} ОТКРЫТО</span><i>◆</i></button></div></section>`;
+  document.querySelectorAll("[data-preview]").forEach(c=>preview(c,c.dataset.preview));
+  bind("[data-play]",el=>start(el.dataset.play,1,el.dataset.daily==="true"));
+  $("#home-cases").onclick=()=>navigate("cases");
+  $("#home-skins").onclick=()=>navigate("collection");
+  if(data.active){
+    $("#resume").onclick=()=>launch(data.active);
+    bind("#abandon",async()=>{const r=await api("/session/sync",{id:data.active.id,version:data.active.version,inputs:[],finish:true});if(r.conflict)throw Error("Забег изменился. Обнови страницу");await refresh();hub()});
   }
 }
 const boxes = () =>
