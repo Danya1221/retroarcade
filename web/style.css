@@ -252,7 +252,6 @@ nav button b {
   width: 100%;
   height: 100%;
   min-height: 290px;
-  image-rendering: pixelated;
 }
 .hero-bottom {
   display: flex;
@@ -277,9 +276,9 @@ nav button b {
   color: var(--muted);
   font-size: 11px;
 }
-.game-grid {
+ .game-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 19px;
 }
 .game-card {
@@ -297,7 +296,6 @@ nav button b {
 .game-art canvas {
   width: 100%;
   height: 100%;
-  image-rendering: pixelated;
 }
 .tag {
   position: absolute;
@@ -566,6 +564,8 @@ dialog .actions {
 }
 .play-stage {
   position: relative;
+  border-radius: 12px;
+  box-shadow: 0 18px 60px #0008, inset 0 0 0 1px #ffffff0b;
   background: #11151c;
   border: 1px solid #414957;
   max-height: 75dvh;
@@ -576,7 +576,6 @@ dialog .actions {
 .play-stage canvas {
   width: 100%;
   height: 100%;
-  image-rendering: pixelated;
   touch-action: none;
 }
 .crt:after {
@@ -902,3 +901,13 @@ textarea {
     transition: none !important;
   }
 }
+
+/* 32-bit era presentation: smooth scaling, richer materials and depth. */
+.game-art canvas,.hero-art,.play-stage canvas{image-rendering:auto}
+.game-card{box-shadow:0 14px 35px #0004;transition:transform .2s,border-color .2s,box-shadow .2s}
+.game-card:hover{transform:translateY(-3px);border-color:#ffffff35;box-shadow:0 20px 45px #0006}
+.theme-preview{border-radius:7px;background:
+ radial-gradient(circle at 75% 24%,color-mix(in srgb,var(--skin) 35%,transparent) 0 3px,transparent 4px),
+ linear-gradient(145deg,#ffffff0d,transparent 42%),
+ linear-gradient(180deg,var(--skin-bg) 0 67%,#090c12 68%)}
+.preview-ground{background:linear-gradient(180deg,color-mix(in srgb,var(--skin-terrain) 80%,white) 0 12%,var(--skin-terrain) 13% 62%,color-mix(in srgb,var(--skin-terrain) 70%,black))}
