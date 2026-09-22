@@ -24,7 +24,7 @@ test("transactional API integration", async (t) => {
   await t.test("dev login creates profile and base cosmetics", async () => {
     ({ token } = await call("/api/auth", { dev: true }));
     const me = await call("/api/me");
-    assert.equal(me.owned.length, 3);
+    assert.equal(me.owned.length, 7);
     assert.equal(String(me.user.id), "1");
   });
   await t.test(
