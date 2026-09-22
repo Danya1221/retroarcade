@@ -182,6 +182,58 @@ export async function api(req, path, b, q) {
       ),
     }));
   }
+  if (method === "POST" && path === "/api/multiplayer/create") {
+    if (!["racer","tanks"].includes(b.game) || !["online","mixed"].includes(b.mode)) fail(400,"Неверный режим");
+    return transaction(async c => {
+      const id=randomUUID(), seed=randomBytes(12).toString("hex"), code=randomBytes(3).toString("hex").toUpperCase();
+      await c.query("INSERT INTO multiplayer_rooms(id,code,game,mode,host_id,max_players,seed) VALUES($1,$2,$3,$4,$5,$6,$7)",[id,code,b.game,b.mode,user.id,Math.max(2,Math.min(4,Number(b.maxPlayers)||4)),seed]);
+      await c.query("INSERT INTO multiplayer_players(room_id,user_id,name,slot) VALUES($1,$2,$3,0)",[id,user.id,user.name]);
+      return {id,code,game:b.game,mode:b.mode,host:true};
+    });
+  }
+  if (method === "POST" && path === "/api/multiplayer/join") {
+    const code=String(b.code||"").trim().toUpperCase(); if(!/^[A-F0-9]{6}$/.test(code)) fail(400,"Неверный код комнаты");
+    return transaction(async c => {
+      const room=(await c.query("SELECT * FROM multiplayer_rooms WHERE code=$1 FOR UPDATE",[code])).rows[0];
+      if(!room||room.status!=="lobby") fail(404,"Комната недоступна");
+      const rows=(await c.query("SELECT * FROM multiplayer_players WHERE room_id=$1 ORDER BY slot",[room.id])).rows;
+      if(rows.some(x=>String(x.user_id)===String(user.id))) return {room,players:rows};
+      if(rows.length>=room.max_players) fail(409,"Комната заполнена");
+      const used=new Set(rows.map(x=>x.slot));let slot=0;while(used.has(slot))slot++;
+      await c.query("INSERT INTO multiplayer_players(room_id,user_id,name,slot) VALUES($1,$2,$3,$4)",[room.id,user.id,user.name,slot]);
+      return {room,players:(await c.query("SELECT user_id,name,ready,slot FROM multiplayer_players WHERE room_id=$1 ORDER BY slot",[room.id])).rows};
+    });
+  }
+  if (method === "POST" && path === "/api/multiplayer/ready") {
+    if(!uuid(b.id)) fail(400,"Неверная комната");
+    await pool.query("UPDATE multiplayer_players SET ready=$3,last_seen=now() WHERE room_id=$1 AND user_id=$2",[b.id,user.id,b.ready!==false]);
+    return {ok:true};
+  }
+  if (method === "POST" && path === "/api/multiplayer/start") {
+    if(!uuid(b.id)) fail(400,"Неверная комната");
+    return transaction(async c=>{
+      const room=(await c.query("SELECT * FROM multiplayer_rooms WHERE id=$1 FOR UPDATE",[b.id])).rows[0];
+      if(!room||String(room.host_id)!==String(user.id)||room.status!=="lobby") fail(403,"Запуск недоступен");
+      const players=(await c.query("SELECT * FROM multiplayer_players WHERE room_id=$1 ORDER BY slot",[room.id])).rows;
+      if(players.length<2&&room.mode!=="mixed") fail(409,"Нужно минимум два игрока");
+      if(players.some(x=>!x.ready&&String(x.user_id)!==String(user.id))) fail(409,"Не все игроки готовы");
+      await c.query("UPDATE multiplayer_rooms SET status='playing',started_at=now(),updated_at=now() WHERE id=$1",[room.id]);
+      return {ok:true,seed:room.seed,botSlots:room.mode==="mixed"?Math.max(0,room.max_players-players.length):0};
+    });
+  }
+  if (method === "GET" && path === "/api/multiplayer/room") {
+    if(!uuid(q.get("id"))) fail(400,"Неверная комната");
+    const room=(await pool.query("SELECT id,code,game,mode,host_id,status,max_players,seed,started_at FROM multiplayer_rooms WHERE id=$1",[q.get("id")])).rows[0];
+    if(!room) fail(404,"Комната не найдена");
+    const players=(await pool.query("SELECT user_id,name,ready,slot,seq,input,last_seen FROM multiplayer_players WHERE room_id=$1 ORDER BY slot",[room.id])).rows;
+    return {room,players,botSlots:room.mode==="mixed"?Math.max(0,room.max_players-players.length):0};
+  }
+  if (method === "POST" && path === "/api/multiplayer/input") {
+    if(!uuid(b.id)||!Number.isInteger(b.seq)||!Number.isInteger(b.input)||b.input<0||b.input>63) fail(400,"Неверный ввод");
+    const r=await pool.query("UPDATE multiplayer_players SET input=$3,seq=$4,last_seen=now() WHERE room_id=$1 AND user_id=$2 AND seq<$4 RETURNING seq",[b.id,user.id,b.input,b.seq]);
+    if(!r.rowCount) return {ok:true,ignored:true};
+    return {ok:true,seq:r.rows[0].seq};
+  }
   if (method === "GET" && path === "/api/daily-maze")
     return { day: dayKey(), seed: await daily(pool) };
   if (method === "POST" && path === "/api/session/start")
