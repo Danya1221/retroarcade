@@ -131,46 +131,40 @@ export function step(s, input) {
       s.score += 25;
     }
   }
-  if (s.tick % 14 === 0)
+  if (s.tick % 12 === 0)
     for (const e of s.enemies) {
-      let target = s.player;
       const dist = distance(e, s.player);
-      if (e.type === "guard" && dist > 5) target = e.home;
-      if (e.type === "hunter" && !s.keyTaken) continue;
-      if (e.type === "ambusher") {
-        const [dx, dy] = directions[Math.max(0, direction(input))];
-        target = { x: s.player.x + dx * 2, y: s.player.y + dy * 2 };
-      }
-      if (e.type === "patrol")
-        target = {
-          x: e.x + directions[e.dir][0],
-          y: e.y + directions[e.dir][1],
-        };
-      if (e.type === "ranged") {
-        if (dist < 9 && (e.x === s.player.x || e.y === s.player.y))
-          s.projectiles.push({
-            x: e.x,
-            y: e.y,
-            dx: Math.sign(s.player.x - e.x),
-            dy: Math.sign(s.player.y - e.y),
-          });
-        continue;
+      if (s.tick < (e.wake || 0)) continue;
+      // Enemies outside the encounter radius patrol their own room instead of
+      // knowing the player's position through walls.
+      const alerted = dist <= (e.type === "hunter" ? 10 : e.type === "ranged" ? 8 : 7);
+      let target = alerted ? s.player : e.home;
+      if (e.type === "guard" && dist > 4) target = e.home;
+      if (e.type === "hunter" && !s.keyTaken && !alerted) target = e.home;
+      if (e.type === "ambusher" && alerted) {
+        const d = direction(input), [dx,dy] = directions[d >= 0 ? d : 1];
+        target = {x:s.player.x+dx*2,y:s.player.y+dy*2};
       }
       const choices = directions
-        .map(([dx, dy]) => ({ x: e.x + dx, y: e.y + dy }))
-        .filter((p) => s.map[p.y]?.[p.x] === 0 && !same(p, s.exit));
-      choices.sort((a, b) => distance(a, target) - distance(b, target));
-      if (choices.length) {
-        const p =
-          e.type === "patrol" && random(s) < 0.3
-            ? choices[Math.floor(random(s) * choices.length)]
-            : ["chaser", "hunter", "boss"].includes(e.type)
-              ? route(s, e, target) || choices[0]
-              : choices[0];
-        e.x = p.x;
-        e.y = p.y;
-        e.dir = (e.dir + 1) % 4;
+        .map(([dx,dy])=>({x:e.x+dx,y:e.y+dy}))
+        .filter((p)=>s.map[p.y]?.[p.x]===0 && !same(p,s.exit) &&
+          !s.enemies.some((other)=>other!==e && same(other,p)));
+      if (!choices.length) continue;
+      if (e.type === "ranged" && alerted) {
+        if (dist < 9 && (e.x===s.player.x || e.y===s.player.y) && s.tick % 36===0)
+          s.projectiles.push({x:e.x,y:e.y,dx:Math.sign(s.player.x-e.x),dy:Math.sign(s.player.y-e.y)});
+        // Ranged enemies actively back away if the player gets close.
+        choices.sort((a,b)=>dist < 5 ? distance(b,s.player)-distance(a,s.player) : distance(a,target)-distance(b,target));
+      } else if (alerted && ["chaser","hunter"].includes(e.type)) {
+        const routed=route(s,e,target);
+        if(routed && !s.enemies.some((other)=>other!==e && same(other,routed))){e.x=routed.x;e.y=routed.y;continue;}
+        choices.sort((a,b)=>distance(a,target)-distance(b,target));
+      } else if (alerted) choices.sort((a,b)=>distance(a,target)-distance(b,target));
+      else {
+        // Patrol locally, preferring cells near home and occasionally changing route.
+        choices.sort((a,b)=>distance(a,e.home)-distance(b,e.home)+(random(s)-.5)*2);
       }
+      const p=choices[0]; e.x=p.x; e.y=p.y; e.dir=(e.dir+1)%4;
     }
   if (s.tick % 5 === 0) {
     for (const p of s.projectiles) {
