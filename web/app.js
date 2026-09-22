@@ -170,7 +170,7 @@ async function showRoom(room,host,d){
     $("#room-close").onclick=()=>{clearInterval(timer);d.close()};
     if($("#room-ready"))$("#room-ready").onclick=async()=>{await api("/multiplayer/ready",{id:x.room.id,ready:!me?.ready});await render()};
     if($("#room-start"))$("#room-start").onclick=async()=>{await api("/multiplayer/start",{id:x.room.id});await render()};
-    if(x.room.status==="playing"){clearInterval(timer);d.close();const session=await api("/session/start",{game:x.room.game,level:1,daily:false});await launch(session,{roomId:x.room.id,slot:Number(me?.slot||0),players:x.players})}
+    if(x.room.status==="playing"){clearInterval(timer);d.close();const session=await api("/session/start",{game:x.room.game,level:1,daily:false});await launch(session,{roomId:x.room.id,slot:Number(me?.slot||0),userId:data.user.id,players:x.players})}
   }; await render(); timer=setInterval(()=>render().catch(()=>{}),1500);
 }
 function levelSelect() {
