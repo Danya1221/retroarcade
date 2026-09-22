@@ -1060,3 +1060,16 @@ button.primary{box-shadow:0 0 28px var(--glow),inset 0 1px #fff8}
  .controls{gap:4vw;margin-top:15px}.dpad{padding:9px;border-radius:25px}.action-buttons{gap:12px}.action{width:112px!important;height:112px!important}
  .control-strip{display:grid;grid-template-columns:1fr 1fr;padding:11px 13px;gap:7px 13px;border-radius:15px;font-size:8px}
 }
+
+/* Reference geometry: keep the entire controller inside the Telegram viewport */
+@media(max-width:760px){
+ .play-shell.is-mobile{padding:8px 14px 18px;overflow:hidden}
+ .play-shell.is-mobile .play-top{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center}
+ .play-shell.is-mobile .play-top #exit{justify-self:end}
+ .play-shell.is-mobile .play-stage{width:100%;max-height:none}
+ .play-shell.is-mobile .controls{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:22px;width:100%;max-width:none;padding:0 7px;box-sizing:border-box}
+ .play-shell.is-mobile .dpad{width:min(43vw,330px);height:min(43vw,330px);box-sizing:border-box;justify-self:start}
+ .play-shell.is-mobile .action-buttons{width:100%;justify-content:space-around;gap:8px;min-width:0}
+ .play-shell.is-mobile .action{width:min(25vw,150px)!important;height:min(25vw,150px)!important;flex:0 0 auto}
+ .play-shell.is-mobile .control-strip{width:100%;box-sizing:border-box}
+}
