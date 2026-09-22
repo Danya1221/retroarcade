@@ -20,8 +20,8 @@ test("5,000 maze seeds: keys before doors and exit reachable", () => {
     );
   }
 });
-test("three games replay identically after serialization", () => {
-  for (const game of ["snake", "maze", "platformer"]) {
+test("five games replay identically after serialization", () => {
+  for (const game of ["snake", "maze", "platformer", "mines", "merge2048"]) {
     let a = createGame(game, "replay"),
       b = structuredClone(a);
     const inputs = Array.from(
@@ -51,6 +51,9 @@ test("maze locked exit requires key", () => {
   for (let i = 0; i < 5; i++) tick(s, input);
   assert.equal(s.won, false);
   s.keys = 1;
+  for (let i = 0; i < 5; i++) tick(s, input);
+  assert.equal(s.won, false);
+  s.exitOpen = true;
   for (let i = 0; i < 5; i++) tick(s, input);
   assert.equal(s.won, true);
 });
@@ -116,4 +119,12 @@ test("Telegram HMAC validates authentic data and rejects alterations/age", () =>
   assert.throws(() => validateTelegram(raw.replace("Ada", "Eve"), token, now));
   assert.throws(() => validateTelegram(raw, token, now + 4000000));
   assert.throws(() => validateTelegram(raw + "&auth_date=1", token, now));
+});
+
+test("mines first reveal is safe and 2048 starts with two tiles", () => {
+  const m=createGame("mines","safe"); for(let i=0;i<4;i++) tick(m,32);
+  assert.equal(m.over,false); assert.ok(m.open.length>0); assert.equal(m.mines.length,12);
+  const g=createGame("merge2048","tiles");
+  assert.equal(g.board.flat().filter(Boolean).length,2);
+  assert.ok(g.board.flat().every(v=>v===0||v===2||v===4));
 });
