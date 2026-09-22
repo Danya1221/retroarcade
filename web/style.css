@@ -569,7 +569,7 @@ dialog .actions {
   background: #11151c;
   border: 1px solid #414957;
   max-height: 75dvh;
-  aspect-ratio: 24/17;
+  aspect-ratio: var(--game-ratio, 24/17);
   margin: auto;
   overflow: hidden;
 }
@@ -729,13 +729,18 @@ textarea {
 .mobile-brand {
   display: none;
 }
-@media (min-width: 900px) {
-  .controls {
-    opacity: 0.6;
-  }
-  .controls:hover {
-    opacity: 1;
-  }
+/* Desktop uses keyboard; touch controls belong to phones/tablets. */
+.play-shell.is-desktop .controls { display:none; }
+.play-shell.is-desktop .play-hint { margin-top:14px; }
+.play-shell.is-desktop .play-stage { width:min(100%, 1000px); }
+.play-shell.is-mobile .play-stage { width:100%; max-height:58dvh; }
+.play-shell.is-mobile .controls { display:flex; }
+@media (orientation:landscape) and (max-height:650px) {
+  .play-shell.is-mobile {padding:7px}
+  .play-shell.is-mobile .play-stage{width:min(70vw,760px);max-height:62dvh}
+  .play-shell.is-mobile .controls{position:fixed;inset:auto 8px 8px;pointer-events:none;width:calc(100% - 16px);max-width:none;margin:0}
+  .play-shell.is-mobile .controls button,.play-shell.is-mobile .dpad{pointer-events:auto}
+  .play-shell.is-mobile .play-hint{display:none}
 }
 @media (max-width: 1150px) {
   .layout {
