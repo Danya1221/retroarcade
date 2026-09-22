@@ -105,9 +105,22 @@ export function generate(seed, rareEvent = 0.08) {
       dir: 0,
       key: true,
     });
+  // Optional fake walls hide short side passages. They remain ordinary
+  // walls for path validation until the player reveals them with ACT.
+  const fakeWalls = [];
+  for (const p of before.slice(20)) {
+    if (fakeWalls.length >= 4) break;
+    for (const [dx, dy] of directions) {
+      const wx=p.x+dx, wy=p.y+dy, bx=wx+dx, by=wy+dy;
+      if (map[wy]?.[wx] === 1 && map[by]?.[bx] === 0 && wx>1 && wy>1 && wx<w-2 && wy<h-2) {
+        if (random(r) < .035) fakeWalls.push({x:wx,y:wy,revealed:false});
+      }
+    }
+  }
   const result = {
     map,
     rooms,
+    fakeWalls,
     exit,
     key,
     secret,
