@@ -9,12 +9,18 @@ function rect(c, x, y, w, h, color) {
   c.fillRect(Math.round(x), Math.round(y), Math.ceil(w), Math.ceil(h));
 }
 function tile(c, x, y, z, color, kind = 0) {
-  rect(c, x, y, z, z, color);
-  rect(c, x, y, z, 3, "#ffffff22");
-  rect(c, x, y + z - 4, z, 4, "#0005");
-  rect(c, x + 3, y + 6, z * 0.35, 2, "#0003");
-  rect(c, x + z * 0.55, y + z * 0.6, z * 0.3, 2, "#ffffff12");
-  if (kind) rect(c, x + z - 3, y, 3, z, "#0003");
+  const g=c.createLinearGradient(x,y,x,y+z);
+  g.addColorStop(0,color); g.addColorStop(1,"#11151d");
+  c.fillStyle=g; c.fillRect(Math.round(x),Math.round(y),Math.ceil(z),Math.ceil(z));
+  rect(c,x,y,z,Math.max(2,z*.09),"#ffffff24");
+  rect(c,x,y+z-Math.max(3,z*.12),z,Math.max(3,z*.12),"#0006");
+  // deterministic stone/metal seams make the dungeon read as a place, not a grid
+  rect(c,x+z*.12,y+z*.30,z*.34,Math.max(1,z*.055),"#0004");
+  rect(c,x+z*.58,y+z*.62,z*.27,Math.max(1,z*.05),"#ffffff14");
+  if(kind){
+    rect(c,x+z-Math.max(2,z*.08),y,Math.max(2,z*.08),z,"#0004");
+    c.fillStyle="#ffffff0d"; c.beginPath(); c.arc(x+z*.25,y+z*.72,Math.max(1,z*.06),0,Math.PI*2); c.fill();
+  }
 }
 function actor(c, x, y, z, color, frame = 0, type = "player") {
   const p = z / 8;
@@ -159,6 +165,13 @@ export function render(c, s, color = "#bdff70", settings = {}, skin = {}) {
       }
     }
     for (const r of s.rooms) {
+      const rx=(r.x+.5)*z, ry=(r.y+.5)*z;
+      if (["treasure","challenge","rare","secret","event"].includes(r.type)) {
+        c.save();
+        c.globalAlpha=.13+.05*Math.sin((s.tick+r.x*7)/18);
+        c.fillStyle=r.type==="rare"?"#8eefff":r.type==="treasure"?"#ffd06e":r.type==="challenge"?"#ff8c72":color;
+        c.beginPath(); c.arc(rx,ry,z*1.7,0,Math.PI*2); c.fill(); c.restore();
+      }
       if (r.type === "trap")
         rect(
           c,
