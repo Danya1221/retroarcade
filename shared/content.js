@@ -1,4 +1,6 @@
 export const games = [
+  { id:"mines", name:"VOID MINES", tag:"MINES", description:"Разминируй поле. Ошибка — и сигнал погас.", color:"#72d7ff" },
+  { id:"merge2048", name:"SIGNAL 2048", tag:"2048", description:"Соединяй частоты. Доберись до 2048.", color:"#ffd36b" },
   {
     id: "snake",
     name: "NEON SERPENT",
@@ -64,7 +66,7 @@ export const skins = [
   })),
 ];
 export const defaultConfig = {
-  enabled: { snake: true, maze: true, platformer: true },
+  enabled: { snake: true, maze: true, platformer: true, mines: true, merge2048: true },
   xpPerScore: 0.08,
   completionXP: 80,
   pity: 20,
