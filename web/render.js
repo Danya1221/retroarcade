@@ -1,0 +1,337 @@
+import { worlds } from "/shared/content.js";
+export function setupCanvas(canvas, w = 768, h = 544) {
+  canvas.width = w;
+  canvas.height = h;
+  return canvas.getContext("2d");
+}
+function rect(c, x, y, w, h, color) {
+  c.fillStyle = color;
+  c.fillRect(Math.round(x), Math.round(y), Math.ceil(w), Math.ceil(h));
+}
+function tile(c, x, y, z, color, kind = 0) {
+  rect(c, x, y, z, z, color);
+  rect(c, x, y, z, 3, "#ffffff22");
+  rect(c, x, y + z - 4, z, 4, "#0005");
+  rect(c, x + 3, y + 6, z * 0.35, 2, "#0003");
+  rect(c, x + z * 0.55, y + z * 0.6, z * 0.3, 2, "#ffffff12");
+  if (kind) rect(c, x + z - 3, y, 3, z, "#0003");
+}
+function actor(c, x, y, z, color, frame = 0, type = "player") {
+  const p = z / 8;
+  rect(c, x + p, y + 7 * p, 6 * p, 2 * p, "#0005");
+  if (type === "enemy") {
+    rect(c, x + p, y + 2 * p, 6 * p, 5 * p, color);
+    rect(c, x + 2 * p, y, 4 * p, 3 * p, color);
+    rect(c, x + 2 * p, y + 3 * p, p, p, "#fff");
+    rect(c, x + 5 * p, y + 3 * p, p, p, "#fff");
+    rect(c, x + (frame % 2 ? 1 : 2) * p, y + 7 * p, 2 * p, p, color);
+    rect(c, x + 5 * p, y + 7 * p, 2 * p, p, color);
+    return;
+  }
+  rect(c, x + 2 * p, y, 4 * p, 3 * p, color);
+  rect(c, x + p, y + 3 * p, 6 * p, 3 * p, color);
+  rect(c, x + 2 * p, y + 6 * p, 2 * p, 2 * p, color);
+  rect(c, x + 5 * p, y + (frame % 2 ? 5 : 6) * p, p, 2 * p, color);
+  rect(c, x + 3 * p, y + p, 3 * p, p, "#16222f");
+  rect(c, x + p, y + 3 * p, p, 2 * p, "#fff7");
+}
+function gem(c, x, y, z, color) {
+  rect(c, x + z * 0.35, y, z * 0.3, z, color);
+  rect(c, x, y + z * 0.3, z, z * 0.4, color);
+  rect(c, x + z * 0.3, y + z * 0.2, z * 0.2, z * 0.2, "#fff9");
+}
+function background(c, w, h, color, t = 0) {
+  rect(c, 0, 0, w, h, color);
+  for (let i = 0; i < 40; i++) {
+    let x = (i * 137) % w,
+      y = (i * 79) % Math.max(1, h * 0.65);
+    rect(c, x, y, i % 4 === 0 ? 2 : 1, 2, "#cad0e52a");
+  }
+  for (let i = 0; i < 8; i++) {
+    const x = (i * w) / 7 - ((t * 0.15) % 100);
+    rect(c, x, h * 0.5 - (i % 3) * 30, w / 7 - 10, h, "#0002");
+    rect(c, x + 4, h * 0.55 - (i % 3) * 30, 8, 18, "#bdff7010");
+  }
+}
+export function render(c, s, color = "#bdff70", settings = {}) {
+  const w = c.canvas.width,
+    h = c.canvas.height;
+  const z = Math.min(
+    w / s.width,
+    h / (s.game === "platformer" ? 17 : s.height),
+  );
+  background(
+    c,
+    w,
+    h,
+    s.game === "platformer" ? worlds[s.world].sky : "#141b22",
+    s.tick,
+  );
+  c.save();
+  const ox = (w - z * s.width) / 2,
+    oy = (h - z * (s.game === "platformer" ? 17 : s.height)) / 2;
+  c.translate(ox, oy);
+  if (s.game === "snake") {
+    for (let y = 0; y < 18; y++)
+      for (let x = 0; x < 24; x++) {
+        if (!x || !y || x === 23 || y === 17)
+          tile(c, x * z, y * z, z, "#304334");
+        else if ((x + y) % 2 === 0) rect(c, x * z, y * z, z, z, "#ffffff03");
+      }
+    for (const p of s.moving || []) tile(c, p.x * z, p.y * z, z, "#ffb578", 1);
+    if (s.bonus) gem(c, s.bonus.x * z, s.bonus.y * z, z * 0.8, "#c69eff");
+    for (const p of s.walls) tile(c, p.x * z, p.y * z, z, "#74566f", 1);
+    s.body.forEach((p, i) => {
+      rect(
+        c,
+        p.x * z + 2,
+        p.y * z + 2,
+        z - 4,
+        z - 4,
+        i === 0 ? color : "#649842",
+      );
+      rect(c, p.x * z + 5, p.y * z + 4, z - 10, 3, "#fff4");
+      if (i === 0) {
+        rect(c, p.x * z + z * 0.3, p.y * z + z * 0.3, 3, 4, "#152215");
+        rect(c, p.x * z + z * 0.65, p.y * z + z * 0.3, 3, 4, "#152215");
+      }
+    });
+    if (s.food)
+      gem(
+        c,
+        s.food.x * z + z * 0.2,
+        s.food.y * z + z * 0.2,
+        z * 0.6,
+        s.rare ? "#ffd780" : "#ff839b",
+      );
+  }
+  if (s.game === "maze") {
+    for (let y = 0; y < s.height; y++)
+      for (let x = 0; x < s.width; x++) {
+        if (s.map[y][x]) tile(c, x * z, y * z, z, "#47445e", 1);
+        else if ((x * 17 + y * 3) % 7 === 0)
+          rect(c, x * z + 3, y * z + z * 0.7, z * 0.4, 2, "#39344a");
+      }
+    for (const r of s.rooms) {
+      if (r.type === "trap")
+        rect(
+          c,
+          r.x * z,
+          r.y * z,
+          z,
+          z,
+          s.tick % 90 < 25 ? "#f8696977" : "#e7bb612a",
+        );
+      if (r.type === "rare" && s.rare)
+        gem(c, r.x * z, r.y * z, z * 0.7, "#9ee7fb");
+    }
+    tile(c, s.exit.x * z, s.exit.y * z, z, s.keys ? "#a4d967" : "#a68b53");
+    rect(
+      c,
+      s.exit.x * z + z * 0.45,
+      s.exit.y * z + z * 0.2,
+      3,
+      z * 0.6,
+      "#221b26",
+    );
+    if (!s.keyTaken) {
+      if (s.keyMode === 2)
+        tile(c, s.key.x * z + 2, s.key.y * z + 3, z - 4, "#a27745");
+      else if (s.keyMode === 0) {
+        gem(c, s.key.x * z + 4, s.key.y * z + 3, z * 0.4, "#ffd680");
+        rect(
+          c,
+          s.key.x * z + z * 0.4,
+          s.key.y * z + z * 0.5,
+          3,
+          z * 0.4,
+          "#ffd680",
+        );
+      }
+    }
+    rect(
+      c,
+      s.secret.x * z + 2,
+      s.secret.y * z + 2,
+      3,
+      3,
+      s.secretFound ? "#bdff70" : "#665979",
+    );
+    for (const e of s.enemies)
+      actor(
+        c,
+        e.x * z,
+        e.y * z,
+        z,
+        e.type === "boss"
+          ? "#ff8066"
+          : e.key
+            ? "#edc368"
+            : e.type === "hunter"
+              ? "#b39bed"
+              : "#f28dad",
+        Math.floor(s.tick / 10),
+        "enemy",
+      );
+    for (const p of s.projectiles) gem(c, p.x * z, p.y * z, z * 0.4, "#ffb267");
+    if (s.tick > s.invulnerable || s.tick % 6 < 3)
+      actor(
+        c,
+        s.player.x * z,
+        s.player.y * z,
+        z,
+        color,
+        Math.floor(s.tick / 8),
+      );
+    if (settings.lighting !== false) {
+      const g = c.createRadialGradient(
+        (s.player.x + 0.5) * z,
+        (s.player.y + 0.5) * z,
+        z * 3,
+        (s.player.x + 0.5) * z,
+        (s.player.y + 0.5) * z,
+        z * 17,
+      );
+      g.addColorStop(0, "#0000");
+      g.addColorStop(1, "#070812bb");
+      c.fillStyle = g;
+      c.fillRect(0, 0, s.width * z, s.height * z);
+    }
+  }
+  if (s.game === "platformer") {
+    const camera = Math.max(0, Math.min(s.length - 24, s.player.x - 8));
+    c.save();
+    c.translate(-camera * z, 0);
+    for (const f of s.platforms) {
+      if (f.type === "falling" && f.trigger && s.tick - f.trigger > 22)
+        continue;
+      for (let i = 0; i < f.w; i++) {
+        tile(c, (f.x + i) * z, f.y * z, z, worlds[s.world].tile, 1);
+        rect(c, (f.x + i) * z, f.y * z, z, 4, worlds[s.world].accent);
+        if (f.type === "ground")
+          for (let j = 1; j < 4; j++)
+            tile(c, (f.x + i) * z, (f.y + j) * z, z, "#30303c");
+      }
+    }
+    for (const t of s.traps) {
+      const on = t.type === "spikes" || s.tick % 100 < 45;
+      for (let i = 0; i < 3; i++) {
+        c.fillStyle = on ? "#ff8992" : "#845363";
+        c.beginPath();
+        c.moveTo((t.x + i / 3) * z, (t.y + 1) * z);
+        c.lineTo((t.x + i / 3 + 0.17) * z, t.y * z);
+        c.lineTo((t.x + i / 3 + 0.33) * z, (t.y + 1) * z);
+        c.fill();
+      }
+    }
+    for (const coin of s.coins)
+      if (!coin.taken)
+        gem(
+          c,
+          coin.x * z,
+          (coin.y + Math.sin(s.tick / 8) * 0.1) * z,
+          z * 0.45,
+          "#ffdc86",
+        );
+    rect(
+      c,
+      s.secret.x * z,
+      s.secret.y * z,
+      4,
+      4,
+      s.secretFound ? "#ffcd81" : "#7b9b79",
+    );
+    rect(c, s.checkpoint.x * z, 11 * z, 3, 3 * z, "#fff8");
+    rect(
+      c,
+      s.checkpoint.x * z,
+      11 * z,
+      z * 0.6,
+      z * 0.5,
+      s.checkpointTaken ? "#bdff70" : "#8b98a9",
+    );
+    for (const e of s.enemies)
+      actor(
+        c,
+        e.x * z,
+        e.y * z,
+        z * (e.type === "boss" ? 1.5 : 1),
+        e.type === "boss" ? "#e37cc1" : "#fa9977",
+        Math.floor(s.tick / 8),
+        "enemy",
+      );
+    for (const b of s.projectiles)
+      gem(c, b.x * z, b.y * z, z * 0.35, "#fca568");
+    tile(c, (s.length - 2) * z, 12 * z, z, worlds[s.world].accent);
+    rect(c, (s.length - 2) * z, 11 * z, z, 2 * z, "#ffffff22");
+    if (s.tick > s.invulnerable || s.tick % 6 < 3)
+      actor(
+        c,
+        s.player.x * z,
+        s.player.y * z,
+        z,
+        color,
+        Math.floor(s.tick / 5),
+      );
+    c.restore();
+  }
+  c.restore();
+}
+export function preview(canvas, game, hero = false) {
+  const c = setupCanvas(canvas, hero ? 500 : 360, hero ? 320 : 210),
+    w = c.canvas.width,
+    h = c.canvas.height;
+  background(
+    c,
+    w,
+    h,
+    game === "snake" ? "#223024" : game === "maze" ? "#26233b" : "#322735",
+  );
+  const z = hero ? 20 : 15;
+  if (game === "snake") {
+    for (let y = 2; y < 12; y++)
+      for (let x = 1; x < 24; x++) rect(c, x * z, y * z, 1, 1, "#fff2");
+    const cells = [
+      [4, 8],
+      [5, 8],
+      [6, 8],
+      [7, 8],
+      [7, 7],
+      [7, 6],
+      [8, 6],
+      [9, 6],
+      [10, 6],
+      [10, 7],
+      [10, 8],
+      [11, 8],
+      [12, 8],
+      [13, 8],
+      [14, 8],
+      [14, 7],
+      [14, 6],
+      [14, 5],
+      [15, 5],
+      [16, 5],
+    ];
+    for (const [x, y] of cells) tile(c, x * z, y * z, z - 2, "#98cf65");
+    gem(c, 18 * z, 5 * z, z, "#ff9cba");
+  } else if (game === "maze") {
+    for (let y = 2; y < 13; y++)
+      for (let x = 1; x < 24; x++)
+        if (x % 5 === 0 || y % 4 === 0) {
+          if ((x + y) % 7) tile(c, x * z, y * z, z, "#656078", 1);
+        }
+    actor(c, 12 * z, 7 * z, z * 1.5, "#c5a2ff");
+    gem(c, 17 * z, 6 * z, z, "#f3d48c");
+    actor(c, 7 * z, 10 * z, z, "#f38da9", 0, "enemy");
+  } else {
+    for (let x = 0; x < 26; x++) {
+      if (x < 9 || x > 12)
+        for (let y = 11; y < 15; y++) tile(c, x * z, y * z, z, "#665d61");
+      if (x > 4 && x < 10) tile(c, x * z, 7 * z, z, "#a59883");
+      if (x > 14 && x < 20) tile(c, x * z, 8 * z, z, "#a59883");
+    }
+    actor(c, 7 * z, 5 * z, z * 1.5, "#ffc181");
+    for (let x = 14; x < 18; x++) gem(c, x * z, 6 * z, z * 0.5, "#ffe0a1");
+  }
+}
