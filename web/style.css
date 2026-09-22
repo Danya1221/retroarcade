@@ -1073,3 +1073,34 @@ button.primary{box-shadow:0 0 28px var(--glow),inset 0 1px #fff8}
  .play-shell.is-mobile .action{width:min(25vw,150px)!important;height:min(25vw,150px)!important;flex:0 0 auto}
  .play-shell.is-mobile .control-strip{width:100%;box-sizing:border-box}
 }
+
+/* APPROVED SNAKE REFERENCE — fixed composition, do not reinterpret */
+.play-shell.is-mobile{max-width:1080px;background:#0b1115;padding:10px 30px 22px}
+.play-shell.is-mobile .play-top{height:82px;min-height:82px;display:grid;grid-template-columns:195px 1fr 195px;gap:20px;padding:0 12px;align-items:center}
+.play-shell.is-mobile .play-top button{width:100%;height:64px;min-height:64px;border-radius:18px;font-size:18px}
+.play-shell.is-mobile .play-top #hud{font-size:34px;line-height:.9;text-align:center}
+.play-shell.is-mobile .play-top #hud:before{font-size:12px;letter-spacing:2px;margin-bottom:5px}
+.play-shell.is-mobile .play-stage{width:100%;aspect-ratio:1.2857!important;border:5px solid #263542;border-radius:27px;margin:0 auto;max-height:none}
+.play-shell.is-mobile .controls{display:grid;grid-template-columns:45% 55%;gap:36px;width:100%;padding:22px 10px 0;box-sizing:border-box;align-items:center}
+.play-shell.is-mobile .dpad{width:100%;height:auto;aspect-ratio:1.12;padding:16px;border-radius:35px}
+.play-shell.is-mobile .dpad button{font-size:28px}
+.play-shell.is-mobile .action-buttons{display:flex;width:100%;justify-content:space-between;gap:24px}
+.play-shell.is-mobile .action{width:min(21vw,150px)!important;height:min(21vw,150px)!important}
+.play-shell.is-mobile .action-symbol{font-size:25px;line-height:1;margin-bottom:2px}
+.play-shell.is-mobile .action span{font-size:20px}
+.play-shell.is-mobile .control-strip{display:grid;grid-template-columns:1.55fr 1fr 1fr 1fr;align-items:center;width:100%;margin:8px 0 0;padding:15px 20px;border-radius:18px;white-space:nowrap}
+.play-shell.is-mobile #sync-status{display:none}
+@media(max-width:600px){
+ .play-shell.is-mobile{padding:8px 14px 18px}
+ .play-shell.is-mobile .play-top{grid-template-columns:1fr .82fr 1fr;gap:9px;height:70px;min-height:70px;padding:0}
+ .play-shell.is-mobile .play-top button{height:54px;min-height:54px;padding:0 9px;font-size:15px}
+ .play-shell.is-mobile .play-top #hud{font-size:27px}
+ .play-shell.is-mobile .play-stage{border-width:4px;border-radius:20px}
+ .play-shell.is-mobile .controls{grid-template-columns:46% 54%;gap:13px;padding:17px 4px 0}
+ .play-shell.is-mobile .dpad{padding:10px;border-radius:27px}
+ .play-shell.is-mobile .dpad button{font-size:20px}
+ .play-shell.is-mobile .action-buttons{gap:9px}
+ .play-shell.is-mobile .action{width:min(24vw,122px)!important;height:min(24vw,122px)!important}
+ .play-shell.is-mobile .action-symbol{font-size:18px}.play-shell.is-mobile .action span{font-size:17px}
+ .play-shell.is-mobile .control-strip{grid-template-columns:1.45fr 1fr;white-space:normal;gap:8px 12px;padding:11px 12px;font-size:8px}
+}
