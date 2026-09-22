@@ -5,7 +5,13 @@ function empty(s) {
       x: 1 + Math.floor(random(s) * 22),
       y: 1 + Math.floor(random(s) * 16),
     };
-    if (!s.body.some((b) => same(b, p)) && !s.walls.some((b) => same(b, p)))
+    if (
+      !s.body.some((b) => same(b, p)) &&
+      !s.walls.some((b) => same(b, p)) &&
+      !(s.moving || []).some((b) => same(b, p)) &&
+      (!s.bonus || !same(s.bonus, p)) &&
+      (!s.food || !same(s.food, p))
+    )
       return p;
   }
   return null;
@@ -33,19 +39,39 @@ export function init(s) {
   s.food = empty(s);
   return s;
 }
+export function moveInterval(s) {
+  const base = Math.max(3, 9 - Math.floor(s.eaten / 6));
+  return s.tick < (s.slowUntil || 0)
+    ? base + 4
+    : s.sprinting
+      ? Math.max(2, base - 3)
+      : base;
+}
 export function step(s, input) {
+  s.sprinting = !!(input & 16);
+  if (input & 32 && s.tick >= (s.slowReady || 0)) {
+    s.slowUntil = s.tick + 90;
+    s.slowReady = s.tick + 450;
+  }
   const d = direction(input);
   if (d >= 0 && d !== (s.dir + 2) % 4 && s.turnTick !== s.moveTick) {
     s.dir = d;
     s.turnTick = s.moveTick;
   }
   if (s.eaten >= 12 && s.tick % 60 === 0) {
-    s.moving = [{ x: 2 + Math.floor((s.tick / 60) % 19), y: 3 }];
+    const obstacle = { x: 2 + Math.floor((s.tick / 60) % 19), y: 3 };
+    if (
+      ![...s.body, ...s.walls, s.food, s.bonus].some(
+        (p) => p && same(p, obstacle),
+      )
+    )
+      s.moving = [obstacle];
   }
   if (s.eaten >= 5 && !s.bonus && s.tick % 180 === 0) {
     s.bonus = empty(s);
   }
-  const interval = Math.max(3, 9 - Math.floor(s.eaten / 6));
+  const interval = moveInterval(s);
+  s.interval = interval;
   if (s.tick % interval) return;
   s.moveTick = s.tick;
   const [dx, dy] = directions[s.dir],

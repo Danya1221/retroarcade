@@ -1,4 +1,5 @@
 import test from "node:test";
+import campaignReplays from "./campaign-replays.json" with { type: "json" };
 import assert from "node:assert/strict";
 import { generate, validate, reachable } from "../games/maze/generator.js";
 import { createGame, tick, replay } from "../shared/engine.js";
@@ -21,7 +22,15 @@ test("5,000 maze seeds: keys before doors and exit reachable", () => {
   }
 });
 test("seven games replay identically after serialization", () => {
-  for (const game of ["snake", "maze", "platformer", "mines", "merge2048", "racer", "tanks"]) {
+  for (const game of [
+    "snake",
+    "maze",
+    "platformer",
+    "mines",
+    "merge2048",
+    "racer",
+    "tanks",
+  ]) {
     let a = createGame(game, "replay"),
       b = structuredClone(a);
     const inputs = Array.from(
@@ -69,23 +78,10 @@ test("platformer finale cannot be bypassed with boss alive", () => {
 test("all campaign levels can be completed by an action replay", () => {
   for (let level = 1; level <= 9; level++) {
     const s = createGame("platformer", "campaign", level);
-    for (let i = 0; i < 5000 && !s.over; i++) {
-      let input = 2 | 32;
-      if (
-        s.ground &&
-        (s.player.x % 12 > 5 ||
-          (s.player.x > 13 && s.player.x < 20) ||
-          (s.player.x > 31 && s.player.x < 38) ||
-          (s.player.x > 49 && s.player.x < 56))
-      )
-        input |= 16;
-      const boss = s.enemies.find((e) => e.type === "boss");
-      if (boss && s.player.x > s.length - 14) {
-        input =
-          32 | (s.player.x < boss.x - 1 ? 2 : s.player.x > boss.x + 1 ? 8 : 0);
-        if (s.ground) input |= 16;
-      }
-      tick(s, input);
+    // Recorded input-only solutions for the current nine layouts; each entry is six ticks.
+    for (const input of campaignReplays[level - 1]) {
+      for (let tickIndex = 0; tickIndex < 6 && !s.over; tickIndex++)
+        tick(s, input);
     }
     assert.ok(
       s.won,
@@ -122,19 +118,56 @@ test("Telegram HMAC validates authentic data and rejects alterations/age", () =>
 });
 
 test("mines first reveal is safe and 2048 starts with two tiles", () => {
-  const m=createGame("mines","safe"); for(let i=0;i<4;i++) tick(m,32);
-  assert.equal(m.over,false); assert.ok(m.open.length>0); assert.equal(m.mines.length,12);
-  const g=createGame("merge2048","tiles");
-  assert.equal(g.board.flat().filter(Boolean).length,2);
-  assert.ok(g.board.flat().every(v=>v===0||v===2||v===4));
+  const m = createGame("mines", "safe");
+  for (let i = 0; i < 4; i++) tick(m, 32);
+  assert.equal(m.over, false);
+  assert.ok(m.open.length > 0);
+  assert.equal(m.mines.length, 12);
+  const g = createGame("merge2048", "tiles");
+  assert.equal(g.board.flat().filter(Boolean).length, 2);
+  assert.ok(g.board.flat().every((v) => v === 0 || v === 2 || v === 4));
 });
 
 test("racer advances and tanks can clear arena", () => {
-  const r=createGame("racer","race");
-  for(let i=0;i<120;i++) tick(r,16|2);
-  assert.ok(r.distance>0); assert.ok(r.speed>0);
-  const t=createGame("tanks","arena");
-  assert.equal(t.bots.length,6); assert.equal(t.player.hp,3);
-  t.bots.forEach(b=>b.hp=0); tick(t,0);
-  assert.equal(t.won,true); assert.equal(t.over,true);
+  const r = createGame("racer", "race");
+  for (let i = 0; i < 120; i++) tick(r, 16 | 2);
+  assert.ok(r.distance > 0);
+  assert.ok(r.speed > 0);
+  const t = createGame("tanks", "arena");
+  assert.equal(t.bots.length, 7);
+  assert.equal(t.player.hp, 3);
+  t.bots.forEach((b) => (b.hp = 0));
+  tick(t, 0);
+  assert.equal(t.won, true);
+  assert.equal(t.over, true);
+});
+
+test("snake boost and slow action change speed and survive JSON restore", () => {
+  const normal = createGame("snake", "speed"),
+    fast = structuredClone(normal),
+    slow = structuredClone(normal);
+  replay(normal, Array(12).fill(0));
+  replay(fast, Array(12).fill(16));
+  replay(slow, [32, ...Array(11).fill(0)]);
+  assert.ok(fast.body[0].x > normal.body[0].x);
+  assert.ok(slow.body[0].x < normal.body[0].x);
+  const restored = JSON.parse(JSON.stringify(slow));
+  replay(slow, Array(20).fill(32));
+  replay(restored, Array(20).fill(32));
+  assert.deepEqual(restored, slow);
+  assert.equal(slow.slowUntil, 91, "holding action must not reset cooldown");
+});
+
+test("legacy tanks saves recover collision from the persisted maze", () => {
+  const fresh = createGame("tanks", "legacy"),
+    legacy = structuredClone(fresh);
+  legacy.walls = {}; // The old Set serialized as an empty object.
+  for (const input of [2, 2, 4, 16, 32, 8, 1]) {
+    for (let i = 0; i < 20; i++) {
+      tick(fresh, input);
+      tick(legacy, input);
+    }
+  }
+  assert.deepEqual(legacy.player, fresh.player);
+  assert.deepEqual(legacy.bots, fresh.bots);
 });

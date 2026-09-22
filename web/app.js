@@ -125,28 +125,26 @@ async function navigate(next = "games") {
   }
 }
 function hub() {
-  const order=["snake","platformer","racer","tanks","maze","merge2048","mines"];
-  const labels={snake:"SNAKE",platformer:"PLATFORMER",racer:"RACING",tanks:"TANKS",maze:"MAZE",merge2048:"2048",mines:"MINES"};
-  const sprite={snake:"sprite-snake",platformer:"sprite-platformer",tanks:"sprite-tanks",racer:"sprite-racer"};
-  const cards=order.map(id=>data.games.find(g=>g.id===id)).filter(Boolean), asset="/assets/retro-ui/";
-  $("#page").innerHTML=`${data.active ? `<div class="notice row"><span>СОХРАНЁННЫЙ ЗАБЕГ · ${esc(data.active.game).toUpperCase()}</span><button id="resume" class="small">ПРОДОЛЖИТЬ</button><button id="abandon" class="small">ЗАВЕРШИТЬ</button></div>` : ""}
-  <section class="retro-home">
-    <img class="retro-room-bg" src="${asset}IMG_9420.png" alt="" aria-hidden="true">
-    <header class="retro-playerbar">
-      <button class="retro-player" id="profile-card"><span class="retro-avatar-frame"><span>${esc(data.user.name.slice(0,2).toUpperCase())}</span></span><span><b>${esc(data.user.name)}</b><small>LV. ${data.user.level}</small><i><u style="width:${Math.min(100,(data.user.xp%250)/2.5)}%"></u></i></span></button>
-      <div class="retro-head-actions"><button class="retro-coins" id="coin-shop"><span>COIN</span><b>${data.user.coins||0}</b></button><button class="retro-settings" id="home-settings">SET</button></div>
-    </header>
-    <div class="retro-logo"><img src="${asset}IMG_9417.png" alt="Retro Arcade"><p>PLAY <i>•</i> COLLECT <i>•</i> COMPETE</p></div>
-    <section class="retro-games" aria-label="Игры">
-      ${cards.map((g,i)=>`<button class="retro-game game-${g.id}" data-play="${g.id}" style="--game:${g.color||"#ff7b32"}" ${g.enabled?"":"disabled"}><span class="retro-game-screen">${sprite[g.id]?`<span class="game-cover-sprite ${sprite[g.id]}"><img src="${asset}IMG_9416.png" alt=""></span>`:`<canvas data-preview="${g.id}" aria-label="${labels[g.id]} preview"></canvas><span class="asset-todo">PIXEL COVER TODO</span>`}<span class="screen-scan"></span></span><span class="retro-game-meta"><b>${labels[g.id]||esc(g.name)}</b><small>${g.id==="platformer"?"LV "+Math.min(9,data.user.progress):"BEST "+(data.user.stats["best-"+g.id]||0)}</small></span></button>`).join("")}
-    </section>
-    <button class="retro-loot" id="loot-banner"><span class="loot-sprite"><img src="${asset}IMG_9418.png" alt=""></span><span><b>RANDOM LOOTBOX</b><small>NEW SKINS · NEW SURPRISES</small></span><i>›</i></button>
+  const order=["snake","platformer","racer","tanks","maze"], labels={snake:"SNAKE",platformer:"PLATFORMER",racer:"RACING",tanks:"TANKS",maze:"MAZE"};
+  const cards=order.map(id=>data.games.find(g=>g.id===id)).filter(Boolean);
+  $(".arcade-shell").classList.add("reference-home");
+  $("#page").innerHTML=`<section class="reference-room">
+    <header class="reference-playerbar"><button id="profile-card" class="reference-player"><span class="reference-avatar">${esc(data.user.name.slice(0,2))}</span><span><b>${esc(data.user.name)}</b><small>★ LV. ${data.user.level}</small><progress max="${data.user.xpNext-data.user.xpFloor}" value="${data.user.xp-data.user.xpFloor}" aria-label="Опыт"></progress></span></button><div class="reference-wallet"><button id="coin-shop"><span class="pixel-coin"></span><b>${Number(data.user.coins||0).toLocaleString('ru-RU')}</b><span class="wallet-plus">+</span></button><button id="home-settings" aria-label="Настройки">⚙</button></div></header>
+    <div class="reference-logo"><img src="/assets/retro-ui/IMG_9417.png" alt="Retro Arcade — Play Collect Compete"></div>
+    ${data.active?`<div class="notice row"><span>Сохранённый забег · ${esc(data.active.game)}</span><button id="resume">Продолжить</button><button id="abandon">Завершить</button></div>`:''}
+    <div class="reference-content"><div class="reference-grid">${cards.map((g,i)=>`<button class="reference-card" data-play="${g.id}" style="--col:${i%3};--row:${Math.floor(i/3)};--edge:${g.color||'#879db8'}" ${g.enabled?'':'disabled'}><span class="reference-cover"></span><b>${labels[g.id]}</b><small>${g.id==='platformer'?'LV '+Math.min(9,data.user.progress):'BEST '+(data.user.stats['best-'+g.id]||0)}</small></button>`).join('')}<button class="reference-card" id="more-games" style="--col:2;--row:1;--edge:#8993a2"><span class="reference-cover"></span><b>MORE GAMES</b></button></div>
+    <aside class="reference-shortcuts"><button data-dest="collection"><span class="shortcut-art inventory-art"></span><span>INVENTORY</span></button><button data-dest="profile"><span class="shortcut-art trophy-art"></span><span>ACHIEVEMENTS</span></button><button data-dest="cases"><span class="shortcut-art shop-art"></span><span>SHOP</span></button><button data-dest="challenges"><span class="shortcut-art tasks-art"></span><span>DAILY TASKS</span></button></aside></div>
+    <button class="reference-loot" id="loot-banner"><span class="loot-sprite"><img src="/assets/retro-ui/IMG_9418.png" alt=""></span><span><b>RANDOM LOOTBOX</b><small>New skins. New surprises.</small></span><strong>›</strong></button>
+    <nav class="reference-nav" aria-label="Навигация меню">${[['games','HOME','nav-home'],['leaderboard','LEADERBOARD','nav-score'],['collection','COLLECTION','nav-skins'],['profile','PROFILE','nav-profile']].map(([dest,label,icon])=>`<button data-dest="${dest}" class="${dest==='games'?'active':''}"><i class="nav-sprite ${icon}"><img src="/assets/retro-ui/IMG_9419.png" alt=""></i><span>${label}</span></button>`).join('')}</nav>
+    ${data.user.admin?'<button class="reference-admin" data-dest="admin">ADMIN</button>':''}
   </section>`;
-  document.querySelectorAll("[data-preview]").forEach(c=>preview(c,c.dataset.preview));
-  bind("[data-play]",async el=>{el.classList.add("launching");await new Promise(r=>setTimeout(r,110));const g=el.dataset.play;if(["racer","tanks"].includes(g)){multiplayerChoice(g);return;}return start(g,1,false)});
-  $("#profile-card").onclick=()=>navigate("profile");$("#home-settings").onclick=()=>navigate("settings");$("#coin-shop").onclick=$("#loot-banner").onclick=()=>navigate("cases");
-  if(data.active){$("#resume").onclick=()=>launch(data.active);bind("#abandon",async()=>{const r=await api("/session/sync",{id:data.active.id,version:data.active.version,inputs:[],finish:true});if(r.conflict)throw Error("Забег изменился. Обнови страницу");await refresh();hub()})}
+  bind('[data-dest]',el=>navigate(el.dataset.dest));
+  bind('[data-play]',el=>['racer','tanks'].includes(el.dataset.play)?multiplayerChoice(el.dataset.play):start(el.dataset.play));
+  $('#more-games').onclick=()=>{const d=modal('<h2>Больше игр</h2><div class="stack">'+data.games.filter(g=>!order.includes(g.id)).map(g=>`<button data-extra="${g.id}" ${g.enabled?'':'disabled'}>${esc(g.name)}</button>`).join('')+'<button id="daily-maze">DAILY MAZE</button><button id="extra-close">Назад</button></div>');$('#extra-close').onclick=()=>d.close();bind('[data-extra]',async el=>{d.close();await start(el.dataset.extra)});$('#daily-maze').onclick=()=>{d.close();start('maze',1,true)};};
+  $('#profile-card').onclick=()=>navigate('profile');$('#home-settings').onclick=()=>navigate('settings');$('#coin-shop').onclick=$('#loot-banner').onclick=()=>navigate('cases');
+  if(data.active){$('#resume').onclick=()=>launch(data.active);bind('#abandon',async()=>{const r=await api('/session/sync',{id:data.active.id,version:data.active.version,inputs:[],finish:true});if(r.conflict)throw Error('Забег изменился. Обнови страницу');await refresh();hub();});}
 }
+
 const boxes = () =>
   data.inventory.find((x) => x.item === "arcade")?.quantity || 0;
 async function start(game, level = 1, daily = false) {
@@ -195,7 +193,7 @@ function levelSelect() {
 async function launch(session, multiplayer = null) {
   const { play } = await import("./play.js");
   gameRuntime?.destroy();
-  gameRuntime = play(
+  gameRuntime = await play(
     session,
     api,
     settings,

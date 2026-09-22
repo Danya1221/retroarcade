@@ -136,6 +136,8 @@ export async function api(req, path, b, q) {
       user: {
         ...user,
         level: levelFromXP(user.xp, cfg.levelXP),
+        xpFloor: (levelFromXP(user.xp, cfg.levelXP) - 1) ** 2 * cfg.levelXP,
+        xpNext: levelFromXP(user.xp, cfg.levelXP) ** 2 * cfg.levelXP,
         admin: isAdmin(user.id),
       },
       games: games.map((g) => ({ ...g, enabled: cfg.enabled[g.id] })),

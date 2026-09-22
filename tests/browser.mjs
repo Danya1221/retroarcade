@@ -30,19 +30,23 @@ const page = await browser.newPage({ viewport: { width: 1440, height: 1100 } });
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
 await page.goto("http://localhost:3000");
-await page.getByText("Выбери свой автомат").waitFor();
+await page.locator(".reference-grid").waitFor();
 await page.screenshot({ path: "test-results/hub-desktop.png", fullPage: true });
 await page.locator('[data-play="snake"]').click();
 await page.locator("#game").waitFor();
+await page.screenshot({
+  path: "test-results/snake-desktop.png",
+  fullPage: true,
+});
 await page.waitForTimeout(5200);
 if (await page.locator("#pause").count()) await page.locator("#exit").click();
 if (await page.locator("#result-close").count())
   await page.locator("#result-close").click();
-await page.locator('[data-nav="profile"]').click();
+await page.locator('[data-dest="profile"]').last().click();
 await page.getByText("Достижения", { exact: true }).waitFor();
-await page.locator('[data-nav="collection"]').click();
-await page.getByText("Коллекция", { exact: true }).waitFor();
-await page.locator('[data-nav="challenges"]').click();
+await page.locator('[data-nav="collection"]:visible').click();
+await page.getByRole("heading", { name: "Скины", exact: true }).waitFor();
+await page.locator('[data-nav="challenges"]:visible').click();
 await page.getByText("Три попытки в Snake").waitFor();
 await page.locator('[data-nav="admin"]').click();
 await page.getByText("Управление аркадой").waitFor();
@@ -51,8 +55,8 @@ await page.screenshot({
   fullPage: true,
 });
 await page.setViewportSize({ width: 390, height: 844 });
-await page.locator('[data-nav="games"]').click();
-await page.getByText("Выбери свой автомат").waitFor();
+await page.locator('[data-nav="games"]').last().click();
+await page.locator(".reference-grid").waitFor();
 await page.screenshot({ path: "test-results/hub-mobile.png", fullPage: true });
 assert.equal(
   await page.evaluate(() => document.documentElement.scrollWidth > innerWidth),
@@ -61,8 +65,23 @@ assert.equal(
 );
 const packets = [];
 page.on("request", (request) => {
-  if (request.url().endsWith("/api/session/sync")) packets.push(request.postDataJSON());
+  if (request.url().endsWith("/api/session/sync"))
+    packets.push(request.postDataJSON());
 });
+await page.locator('[data-play="snake"]').click();
+await page.locator("#game").waitFor();
+await page.locator("#pause").click();
+await page.screenshot({
+  path: "test-results/snake-mobile.png",
+  fullPage: true,
+});
+assert.equal(
+  await page.evaluate(() => document.documentElement.scrollWidth > innerWidth),
+  false,
+  "snake mobile overflow",
+);
+await page.locator("#exit").click();
+await page.locator("#abandon").click();
 await page.locator('[data-play="platformer"]').click();
 await page.locator('[data-level="1"]').click();
 await page.locator("#game").waitFor();
@@ -71,14 +90,29 @@ const jump = await page.locator('[data-key="16"]').boundingBox();
 const cdp = await page.context().newCDPSession(page);
 await cdp.send("Input.dispatchTouchEvent", {
   type: "touchStart",
-  touchPoints: [right, jump].map((r, id) => ({ x: r.x + r.width / 2, y: r.y + r.height / 2, id })),
+  touchPoints: [right, jump].map((r, id) => ({
+    x: r.x + r.width / 2,
+    y: r.y + r.height / 2,
+    id,
+  })),
 });
 await page.waitForTimeout(500);
-await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+await cdp.send("Input.dispatchTouchEvent", {
+  type: "touchEnd",
+  touchPoints: [],
+});
 await page.locator("#pause").click();
-await page.getByText("Сохранено ✓", { exact: true }).waitFor();
-assert.ok(packets.some(p => p.inputs.some(i => (i & 18) === 18)), "simultaneous movement and jump");
-await page.screenshot({ path: "test-results/platformer-mobile.png", fullPage: true });
+await page
+  .getByText("Сохранено ✓", { exact: true })
+  .waitFor({ state: "attached" });
+assert.ok(
+  packets.some((p) => p.inputs.some((i) => (i & 18) === 18)),
+  "simultaneous movement and jump",
+);
+await page.screenshot({
+  path: "test-results/platformer-mobile.png",
+  fullPage: true,
+});
 await page.locator("#exit").click();
 await page.locator("#resume").waitFor();
 await page.reload();
@@ -90,6 +124,8 @@ await page.locator('[data-play="maze"]').last().click();
 await page.locator("#game").waitFor();
 await page.screenshot({ path: "test-results/maze-mobile.png", fullPage: true });
 assert.deepEqual(errors, []);
-console.log("Browser hub/navigation/admin/mobile/multitouch/recovery checks passed");
+console.log(
+  "Browser hub/navigation/admin/mobile/multitouch/recovery checks passed",
+);
 await browser.close();
 server.kill();

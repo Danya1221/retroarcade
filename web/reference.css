@@ -1,0 +1,531 @@
+/* Layered assets, live HTML values and existing game routes. */
+.reference-home {
+  display: block;
+  background: #03060d;
+}
+.reference-home > .sidebar,
+.reference-home .console-topbar,
+.reference-home .screen-leds,
+.reference-home > .mobile-arcade-nav {
+  display: none !important;
+}
+.reference-home > .main {
+  max-width: none;
+  padding: 0 !important;
+}
+.reference-home .console-screen-shell {
+  border: 0 !important;
+  padding: 0 !important;
+  background: none !important;
+  box-shadow: none !important;
+}
+.reference-room {
+  position: relative;
+  min-height: 100dvh;
+  max-width: 1440px;
+  margin: auto;
+  padding: 20px 15% 42px;
+  background: #03060d url("/assets/retro-ui/v2/arcade-room.webp") center
+    top/100% 100% no-repeat;
+  font-family: ui-monospace, Consolas, monospace;
+}
+.reference-playerbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  margin: 0 -17%;
+}
+.reference-player,
+.reference-wallet button {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background: #080d16dc;
+  border: 2px solid #384763;
+  border-radius: 7px;
+  padding: 9px 12px;
+  box-shadow: inset 0 0 0 3px #02050b;
+}
+.reference-player {
+  text-align: left;
+  max-width: 50%;
+}
+.reference-player b {
+  display: block;
+  max-width: 170px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.reference-player small {
+  color: #ffd476;
+  display: inline-block;
+  margin-top: 7px;
+}
+.reference-avatar {
+  display: grid;
+  place-items: center;
+  width: 45px;
+  height: 45px;
+  color: #ffbd65;
+  background: #283146;
+  border: 2px solid #8296b7;
+  font-weight: 900;
+}
+.reference-player progress {
+  width: 60px;
+  height: 9px;
+  margin-left: 10px;
+  accent-color: #f78735;
+}
+.reference-wallet {
+  display: flex;
+  gap: 14px;
+}
+.reference-wallet b {
+  font-size: 23px;
+  white-space: nowrap;
+}
+.wallet-plus {
+  border: 2px solid #3966a8;
+  color: #77aeff;
+  font-size: 23px;
+  padding: 0 6px;
+}
+.pixel-coin {
+  width: 23px;
+  height: 28px;
+  background: #e7a22c;
+  border: 4px ridge #ffe27a;
+  box-shadow: 0 0 12px #ffa52255;
+  border-radius: 40%;
+}
+.reference-wallet #home-settings {
+  font-size: 25px;
+}
+.reference-logo {
+  display: flex;
+  justify-content: center;
+  margin: 0 auto 24px;
+}
+.reference-logo img {
+  width: 62%;
+  max-width: 450px;
+  height: auto;
+  image-rendering: pixelated;
+  mix-blend-mode: screen;
+}
+.reference-content {
+  position: relative;
+}
+.reference-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+.reference-card {
+  position: relative;
+  display: block;
+  aspect-ratio: 1/1.05;
+  padding: 0;
+  overflow: hidden;
+  border: 3px solid var(--edge);
+  border-radius: 10px;
+  background: #080e18;
+  box-shadow:
+    inset 0 0 0 3px #02040a,
+    0 0 0 3px #151d2b;
+}
+.reference-cover {
+  position: absolute;
+  inset: 0;
+  background-image: url("/assets/retro-ui/v2/game-covers.webp");
+  background-size: 300% 200%;
+  background-position: calc(var(--col) * 50%) calc(var(--row) * 100%);
+  image-rendering: pixelated;
+}
+.reference-card > b {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 9px 3px;
+  font: 900 clamp(13px, 2.1vw, 27px) / 1.1 monospace;
+  color: #fff5dc;
+  background: linear-gradient(#030711f0, #030711b0);
+  text-shadow: 2px 2px #000;
+}
+.reference-card small {
+  position: absolute;
+  bottom: 4px;
+  right: 5px;
+  font-size: 9px;
+  padding: 2px 4px;
+  color: #dce3e9;
+  background: #030610b0;
+}
+.reference-shortcuts {
+  position: absolute;
+  left: calc(100% + 18px);
+  top: 0;
+  width: 16%;
+  height: 100%;
+  display: grid;
+  grid-template-rows: repeat(4, 1fr);
+  border: 2px solid #5a3723;
+  background: #04050cdd;
+  border-radius: 8px;
+}
+.reference-shortcuts button {
+  background: transparent;
+  border: 0;
+  padding: 8px 2px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 6px;
+  font: clamp(6px, 1vw, 12px) monospace;
+}
+.shortcut-art {
+  display: block;
+  width: 45px;
+  height: 40px;
+  background-image: url("/assets/retro-ui/IMG_9419.png");
+  background-size: 450px auto;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+}
+.inventory-art {
+  background-position: -78px 0;
+}
+.trophy-art {
+  background-position: -222px 0;
+}
+.shop-art {
+  background-position: -148px 0;
+}
+.tasks-art {
+  background-position: -296px 0;
+}
+.reference-loot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 25px;
+  width: 90%;
+  margin: 28px auto 32px;
+  padding: 18px;
+  border: 3px solid #e7a946;
+  border-radius: 12px;
+  background: linear-gradient(#3d2215c9, #110b07ed);
+  box-shadow:
+    0 0 22px #d88c302a,
+    inset 0 0 0 3px #4b321d;
+}
+.reference-loot b {
+  display: block;
+  font: bold clamp(16px, 2.6vw, 31px) monospace;
+  color: #ffd975;
+}
+.reference-loot small {
+  display: block;
+  margin-top: 8px;
+  color: #e7ddd0;
+  font: clamp(10px, 1.4vw, 17px) Arial;
+}
+.reference-loot strong {
+  font-size: 42px;
+  color: #ffcd64;
+}
+.reference-nav {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  padding: 16px 8px;
+  background: #04070ce8;
+  border: 2px solid #3e465b;
+  border-radius: 10px;
+  box-shadow: 0 -3px #9e5a27;
+}
+.reference-nav button {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  background: none;
+  border: 0;
+  padding: 5px;
+  color: #b8b5c3;
+  font: clamp(8px, 1.2vw, 14px) monospace;
+}
+.reference-nav .active {
+  color: #ffd064;
+  border-bottom: 3px solid #ff9837;
+}
+.reference-admin {
+  display: block;
+  margin: 20px auto 0;
+  background: #080c13;
+  font: 11px monospace;
+  color: #8998ac;
+  padding: 7px 20px;
+}
+.reference-room .notice {
+  font-size: 11px;
+}
+.reference-room .notice button {
+  font-size: 10px;
+  padding: 7px;
+}
+.game-snake.play-shell {
+  background: #071014 url("/assets/snake/forest-arena.webp") center/cover fixed;
+  border: 1px solid #314139;
+  box-shadow: inset 0 0 0 100vmax #071014dc;
+}
+.game-snake .play-stage {
+  border: 4px solid #3c4a51;
+  border-radius: 22px;
+  box-shadow: 0 0 0 3px #080c12;
+  overflow: hidden;
+}
+.game-snake #hud:before {
+  content: "SCORE";
+  display: block;
+  color: #9bdf78;
+  font: 15px monospace;
+  text-align: center;
+  margin-bottom: 3px;
+}
+.game-snake #hud {
+  font-size: 27px;
+  line-height: 1.1;
+}
+.game-snake .dpad {
+  background: #111922d9;
+  border: 2px solid #39434d;
+  border-radius: 24px;
+}
+.game-snake .action-buttons button {
+  border-color: #8ebc79;
+  box-shadow: inset 0 0 15px #5c89564a;
+  background: #111e20;
+}
+.game-snake .play-hint {
+  background: #0a111bd9;
+}
+.game-snake .controls {
+  opacity: 1;
+}
+.game-snake .play-top button {
+  background: #111a22e8;
+  border: 2px solid #3d4855;
+}
+.game-snake .play-stage.crt:after {
+  opacity: 0.12;
+}
+@media (max-width: 760px) {
+  .reference-room {
+    padding: 12px 9px 26px;
+    background-size: auto 100%;
+    background-position: center;
+  }
+  .reference-playerbar {
+    margin: 0;
+    gap: 8px;
+  }
+  .reference-player {
+    padding: 5px;
+    gap: 6px;
+  }
+  .reference-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 13px;
+  }
+  .reference-player b {
+    font-size: 10px;
+    max-width: 95px;
+  }
+  .reference-player small {
+    font-size: 9px;
+    margin-top: 3px;
+  }
+  .reference-player progress {
+    width: 36px;
+    margin-left: 4px;
+    height: 6px;
+  }
+  .reference-wallet {
+    gap: 6px;
+  }
+  .reference-wallet button {
+    padding: 6px;
+    gap: 6px;
+  }
+  .reference-wallet b {
+    font-size: 15px;
+  }
+  .pixel-coin {
+    width: 15px;
+    height: 19px;
+    border-width: 3px;
+  }
+  .wallet-plus {
+    font-size: 16px;
+    padding: 0 3px;
+  }
+  .reference-wallet #home-settings {
+    font-size: 18px;
+  }
+  .reference-logo {
+    margin: 6px 0 15px;
+  }
+  .reference-logo img {
+    width: 62%;
+    max-width: 265px;
+  }
+  .reference-grid {
+    gap: 9px;
+  }
+  .reference-card {
+    border-width: 2px;
+    border-radius: 6px;
+    aspect-ratio: 0.83;
+  }
+  .reference-card > b {
+    font-size: 12px;
+    padding: 8px 1px;
+  }
+  .reference-card small {
+    font-size: 6px;
+  }
+  .reference-shortcuts {
+    position: static;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: 1fr;
+    width: 100%;
+    margin-top: 15px;
+    padding: 5px;
+    border-color: #384356;
+  }
+  .reference-shortcuts button {
+    font-size: 8px;
+    gap: 3px;
+  }
+  .shortcut-art {
+    transform: scale(0.8);
+    margin: -3px;
+  }
+  .reference-loot {
+    width: 97%;
+    gap: 12px;
+    margin: 17px auto 22px;
+    padding: 12px 8px;
+  }
+  .reference-loot .loot-sprite {
+    flex: 0 0 58px;
+  }
+  .reference-loot b {
+    font-size: 17px;
+  }
+  .reference-loot small {
+    font-size: 11px;
+  }
+  .reference-loot strong {
+    font-size: 31px;
+  }
+  .reference-nav {
+    padding: 9px 4px;
+  }
+  .reference-nav button {
+    gap: 5px;
+    font-size: 8px;
+  }
+  .game-snake.play-shell {
+    padding: 12px 7px;
+    min-height: 100dvh;
+  }
+  .game-snake .play-stage {
+    border-width: 3px;
+    border-radius: 14px;
+  }
+  .game-snake #hud {
+    font-size: 22px;
+  }
+  .game-snake #hud:before {
+    font-size: 10px;
+  }
+  .game-snake .play-top button {
+    padding: 12px 9px;
+    font-size: 13px;
+  }
+  .game-snake .controls {
+    margin-top: 20px;
+  }
+}
+
+/* Source sheet coordinates exclude baked labels and headings. */
+.reference-nav .nav-sprite img {
+  width: 400px;
+  top: -21px;
+}
+.reference-nav .nav-home img {
+  left: -26px;
+}
+.reference-nav .nav-score img {
+  left: -214px;
+}
+.reference-nav .nav-skins img {
+  left: -148px;
+}
+.reference-nav .nav-profile img {
+  left: -347px;
+}
+.shortcut-art {
+  background-size: 540px 102px;
+}
+.inventory-art {
+  background-position: -200px -29px;
+}
+.trophy-art {
+  background-position: -289px -29px;
+}
+.shop-art {
+  background-position: -119px -29px;
+}
+.tasks-art {
+  background-position: -381px -29px;
+}
+.reference-logo img {
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 4%,
+    #000 96%,
+    transparent
+  );
+}
+.reference-loot .loot-sprite img {
+  width: 280px;
+  top: -12px;
+  left: -10px;
+}
+.game-snake.play-shell.is-mobile .play-stage {
+  aspect-ratio: 4/3 !important;
+}
+.game-snake .play-stage canvas {
+  aspect-ratio: 4/3;
+}
+@media (max-width: 760px) {
+  .reference-loot .loot-sprite img {
+    width: 220px;
+    top: -9px;
+    left: -8px;
+  }
+}
+.game-snake .action-buttons {transform:none}
+.game-snake.play-shell.is-mobile .controls{grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:16px;padding:10px 0 0}
+.game-snake.play-shell.is-mobile .dpad{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));aspect-ratio:1;padding:8px;gap:4px}
+.game-snake.play-shell.is-mobile .dpad button{width:100%;height:100%;min-width:0;min-height:0;padding:0}
+.game-snake.play-shell.is-mobile .action-buttons{gap:10px}
+.game-snake.play-shell.is-mobile .action{width:min(22vw,130px)!important;height:min(22vw,130px)!important;transform:none}

@@ -10,9 +10,9 @@ function makeMaze(s){
  for(const [cx,cy] of [[4,4],[15,5],[26,5],[8,16],[22,17]])for(let y=cy-2;y<=cy+2;y++)for(let x=cx-2;x<=cx+2;x++)if(x>0&&y>0&&x<W-1&&y<H-1)grid[y][x]=0;
  return {W,H,grid,walls:new Set(grid.flatMap((r,y)=>r.map((v,x)=>v?x+","+y:null).filter(Boolean)))};
 }
-const blocked=(s,x,y,r=.36)=>{for(const ox of [-r,r])for(const oy of [-r,r])if(s.walls.has(key(x+ox,y+oy)))return true;return false};
+const blocked=(s,x,y,r=.36)=>{for(const ox of [-r,r])for(const oy of [-r,r])if((Array.isArray(s.walls)?s.walls.includes(key(x+ox,y+oy)):s.maze?.[Math.floor(y+oy)]?.[Math.floor(x+ox)]!==0))return true;return false};
 const openSpot=(s,far=false)=>{for(let n=0;n<300;n++){const x=1.5+Math.floor(rnd(s)*(s.width-3)),y=1.5+Math.floor(rnd(s)*(s.height-3));if(!blocked(s,x,y)&&(!far||Math.hypot(x-s.player.x,y-s.player.y)>7))return{x,y}}return{x:2.5,y:2.5}};
-export function init(s){const m=makeMaze(s);Object.assign(s,{width:m.W,height:m.H,walls:m.walls,maze:m.grid,player:{x:2.5,y:2.5,dir:1,hp:3,cool:0},bots:[],shots:[],coins:0,drops:[],lastInput:0});for(let i=0;i<7;i++){const p=openSpot(s,true);s.bots.push({...p,dir:2,hp:2,cool:20+i*7,turn:0})}return s}
+export function init(s){const m=makeMaze(s);Object.assign(s,{width:m.W,height:m.H,walls:[...m.walls],maze:m.grid,player:{x:2.5,y:2.5,dir:1,hp:3,cool:0},bots:[],shots:[],coins:0,drops:[],lastInput:0});for(let i=0;i<7;i++){const p=openSpot(s,true);s.bots.push({...p,dir:2,hp:2,cool:20+i*7,turn:0})}return s}
 function fire(s,o,enemy=false){if(o.cool>0)return;o.cool=12;const d=[[0,-1],[1,0],[0,1],[-1,0]][o.dir];s.shots.push({x:o.x,y:o.y,dx:d[0]*.34,dy:d[1]*.34,enemy,life:90})}
 function move(s,o,dx,dy){const nx=o.x+dx,ny=o.y+dy;if(!blocked(s,nx,o.y))o.x=nx;if(!blocked(s,o.x,ny))o.y=ny}
 export function step(s,input){const p=s.player;if(p.cool>0)p.cool--;let dx=0,dy=0;if(input&1){dy=-.12;p.dir=0}else if(input&2){dx=.12;p.dir=1}else if(input&4){dy=.12;p.dir=2}else if(input&8){dx=-.12;p.dir=3}move(s,p,dx,dy);if((input&32)&&!(s.lastInput&32))fire(s,p);s.lastInput=input;

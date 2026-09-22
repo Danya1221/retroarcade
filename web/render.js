@@ -1,3 +1,4 @@
+import {drawSnake} from "./snake-art.js";
 import { worlds } from "/shared/content.js";
 export function setupCanvas(canvas, w = 768, h = 544) {
   canvas.width = w;
@@ -128,7 +129,7 @@ export function render(c, s, color = "#bdff70", settings = {}, skin = {}) {
     const dh=z*1.25;c.fillStyle="#10141a";c.fillRect(0,H-dh,W,dh);c.fillStyle="#222a33";c.fillRect(W*.29,H-dh+z*.12,W*.42,dh-z*.2);c.strokeStyle="#66727e";c.lineWidth=z*.06;c.strokeRect(W*.3,H-dh+z*.18,W*.4,dh-z*.32);c.textAlign="center";c.fillStyle="#f4eee0";c.font=`bold ${z*.34}px monospace`;c.fillText(Math.round(s.speed*115)+" KM/H   G"+s.gear,W/2,H-z*.55);c.fillStyle="#ffcf45";c.font=`bold ${z*.22}px monospace`;c.fillText("P"+s.position+"  LAP "+Math.min(s.lap,s.laps)+"/"+s.laps+"  "+s.trackName,W/2,H-z*.18);
   } else if(s.game==="tanks"){
     const W=z*s.width,H=z*s.height;c.fillStyle="#18251b";c.fillRect(0,0,W,H);
-    for(let y=0;y<s.height;y++)for(let x=0;x<s.width;x++){if(s.walls?.has(x+","+y)){const X=x*z,Y=y*z;c.fillStyle=(x+y)%2?"#4d5c43":"#56664a";c.fillRect(X,Y,z,z);c.fillStyle="#69775a";c.fillRect(X+z*.06,Y+z*.08,z*.88,z*.13);c.fillStyle="#303b2e";c.fillRect(X,Y+z*.82,z,z*.18)}else if((x*11+y*17)%23===0){c.fillStyle="#263a29";c.fillRect(x*z+z*.42,y*z+z*.35,z*.12,z*.3)}}
+    for(let y=0;y<s.height;y++)for(let x=0;x<s.width;x++){if(s.maze?.[y]?.[x]===1){const X=x*z,Y=y*z;c.fillStyle=(x+y)%2?"#4d5c43":"#56664a";c.fillRect(X,Y,z,z);c.fillStyle="#69775a";c.fillRect(X+z*.06,Y+z*.08,z*.88,z*.13);c.fillStyle="#303b2e";c.fillRect(X,Y+z*.82,z,z*.18)}else if((x*11+y*17)%23===0){c.fillStyle="#263a29";c.fillRect(x*z+z*.42,y*z+z*.35,z*.12,z*.3)}}
     const tank=(o,col)=>{const X=o.x*z,Y=o.y*z;c.save();c.translate(X,Y);c.rotate(o.dir*Math.PI/2);c.fillStyle="#101510";c.fillRect(-z*.44,-z*.4,z*.18,z*.8);c.fillRect(z*.26,-z*.4,z*.18,z*.8);c.fillStyle=col;c.fillRect(-z*.32,-z*.34,z*.64,z*.68);c.fillStyle="#a9ad72";c.beginPath();c.arc(0,0,z*.23,0,Math.PI*2);c.fill();c.fillRect(-z*.065,-z*.62,z*.13,z*.68);c.restore()};
     for(const b of s.bots)if(b.hp>0)tank(b,skin.enemy||"#b65d4e");for(const p of s._remotePlayers||[]){const slot=Number(p.slot)||0,ghost={x:Number(p.state?.x)||3+(slot%2)*18,y:Number(p.state?.y)||8+(slot%3)*2,dir:Number(p.state?.dir)||0};tank(ghost,["#69d7ff","#d58cff","#8cff9b","#ffb45f"][slot%4])}tank(s.player,skin.color||"#d8c86c");
     for(const q of s.shots){c.fillStyle=q.enemy?"#ff695c":"#fff2a0";c.beginPath();c.arc(q.x*z,q.y*z,z*.1,0,Math.PI*2);c.fill()}for(const d of s.drops)if(!d.taken){c.fillStyle="#ffd84e";c.beginPath();c.arc(d.x*z,d.y*z,z*.18,0,Math.PI*2);c.fill()}
@@ -147,32 +148,7 @@ export function render(c, s, color = "#bdff70", settings = {}, skin = {}) {
       c.fillStyle=`hsl(${h} 55% ${v?38:16}%)`;c.beginPath();c.roundRect(X,Y,cell,cell,12);c.fill();if(v){c.fillStyle="#fff";c.font=`bold ${cell*(v>=1024?.25:.34)}px monospace`;c.textAlign="center";c.textBaseline="middle";c.fillText(v,X+cell/2,Y+cell/2)}
     }
   } else if (s.game === "snake") {
-    const leaf=(x,y,r,rot=0,col="#3f8f32")=>{c.save();c.translate(x,y);c.rotate(rot);const g=c.createLinearGradient(-r,-r,r,r);g.addColorStop(0,"#c6f77c");g.addColorStop(.28,col);g.addColorStop(.72,"#23702d");g.addColorStop(1,"#0d321b");c.fillStyle=g;c.beginPath();c.ellipse(0,0,r,r*.46,0,0,Math.PI*2);c.fill();c.strokeStyle="#d9ff9a35";c.lineWidth=Math.max(1,r*.055);c.beginPath();c.moveTo(-r*.62,0);c.lineTo(r*.62,0);c.stroke();c.restore()};
-    const rock=(X,Y,R)=>{c.save();c.shadowColor="#000";c.shadowBlur=R*.35;const g=c.createLinearGradient(X-R,Y-R,X+R,Y+R);g.addColorStop(0,"#9b9b7d");g.addColorStop(.35,"#626655");g.addColorStop(1,"#272d29");c.fillStyle=g;c.beginPath();c.moveTo(X-R*.8,Y-R*.25);c.lineTo(X-R*.3,Y-R*.9);c.lineTo(X+R*.5,Y-R*.72);c.lineTo(X+R*.9,Y);c.lineTo(X+R*.45,Y+R*.75);c.lineTo(X-R*.45,Y+R*.7);c.closePath();c.fill();c.restore()};
-    // Textured checkerboard lawn.
-    for(let y=0;y<18;y++)for(let x=0;x<24;x++){const X=x*z,Y=y*z;c.fillStyle=(x+y)%2?"#0d2e22":"#123829";c.fillRect(X,Y,z,z);c.fillStyle="#ffffff05";c.fillRect(X+z*.08,Y+z*.1,z*.03,z*.58);if(x&&y&&x<23&&y<17&&(x*17+y*29)%31===0){c.strokeStyle="#61a743";c.lineWidth=Math.max(1,z*.035);c.beginPath();c.moveTo(X+z*.5,Y+z*.72);c.lineTo(X+z*.46,Y+z*.48);c.moveTo(X+z*.5,Y+z*.62);c.lineTo(X+z*.61,Y+z*.49);c.stroke()}}
-    // Thick layered jungle border.
-    const edge=[];
-    for(let x=0;x<24;x++){for(let k=0;k<5;k++){edge.push([x-.05+k*.23,.05+k*.16],[x+.02+k*.24,17.95-k*.16])}}
-    for(let y=1;y<17;y++){for(let k=0;k<5;k++){edge.push([.02+k*.17,y-.04+k*.2],[23.98-k*.17,y+.02+k*.2])}}
-    edge.forEach((p,i)=>leaf(p[0]*z,p[1]*z,z*(.39+(i%5)*.045),(i%7-3)*.25,i%5?"#3d9135":"#246c2e"));
-    [[1.15,.75,.86],[22.65,2.15,.7],[.85,15.95,.78],[22.5,16.45,.9],[4.5,5.1,.34],[19.8,9.1,.38],[8.2,14.4,.28]].forEach(r=>rock(r[0]*z,r[1]*z,r[2]*z));
-    for(let i=0;i<13;i++){const x=(2+i*7)%23+.5,y=i%2?.65:17.35,X=x*z,Y=y*z;c.fillStyle="#fff1d0";for(let q=0;q<5;q++){const an=q*Math.PI*2/5;c.beginPath();c.arc(X+Math.cos(an)*z*.1,Y+Math.sin(an)*z*.1,z*.055,0,Math.PI*2);c.fill()}c.fillStyle="#e8b748";c.beginPath();c.arc(X,Y,z*.05,0,Math.PI*2);c.fill()}
-    for(const p of s.walls){rock((p.x+.5)*z,(p.y+.5)*z,z*.32)}
-    for(const p of s.moving||[])rock((p.x+.5)*z,(p.y+.5)*z,z*.3);
-    if(s.bonus) gem(c,s.bonus.x*z,s.bonus.y*z,z*.8,"#c69eff");
-    const body=s._visualBody||s.body;
-    if(body.length){
-      // Connected base keeps turns seamless.
-      c.save();c.lineCap="round";c.lineJoin="round";c.strokeStyle="#367b2d";c.lineWidth=z*.73;c.shadowColor="#71ff4e";c.shadowBlur=z*.12;c.beginPath();body.forEach((p,i)=>{const X=(p.x+.5)*z,Y=(p.y+.5)*z;i?c.lineTo(X,Y):c.moveTo(X,Y)});c.stroke();c.restore();
-      // Glossy rounded body plates + warm belly edge.
-      for(let i=body.length-1;i>=1;i--){const p=body[i],q=body[Math.max(0,i-1)],ang=Math.atan2(q.y-p.y,q.x-p.x),X=(p.x+.5)*z,Y=(p.y+.5)*z;c.save();c.translate(X,Y);c.rotate(ang);c.fillStyle="#efc778";c.beginPath();c.ellipse(0,z*.205,z*.34,z*.19,0,0,Math.PI*2);c.fill();const g=c.createRadialGradient(-z*.1,-z*.12,z*.02,0,0,z*.35);g.addColorStop(0,"#baf36d");g.addColorStop(.45,"#68bd3d");g.addColorStop(1,"#34792d");c.fillStyle=g;c.beginPath();c.ellipse(0,-z*.025,z*.38,z*.32,0,0,Math.PI*2);c.fill();c.fillStyle="#ffffff32";c.beginPath();c.ellipse(-z*.08,-z*.12,z*.13,z*.065,-.3,0,Math.PI*2);c.fill();c.restore()}
-      const h=body[0],[dx,dy]=directionsForRender(s.dir),px=-dy,py=dx,hx=(h.x+.5)*z,hy=(h.y+.5)*z,ang=Math.atan2(dy,dx);
-      c.save();c.translate(hx+dx*z*.06,hy+dy*z*.06);c.rotate(ang);c.shadowColor="#74ff50";c.shadowBlur=z*.15;const hg=c.createRadialGradient(-z*.12,-z*.15,z*.03,0,0,z*.47);hg.addColorStop(0,"#caff79");hg.addColorStop(.48,"#72c844");hg.addColorStop(1,"#397b31");c.fillStyle=hg;c.beginPath();c.ellipse(0,0,z*.51,z*.41,0,0,Math.PI*2);c.fill();c.restore();
-      for(const side of[-1,1]){const ex=hx+dx*z*.19+px*z*.17*side,ey=hy+dy*z*.19+py*z*.17*side;c.fillStyle="#fff8dc";c.beginPath();c.arc(ex,ey,z*.095,0,Math.PI*2);c.fill();c.fillStyle="#10150d";c.beginPath();c.arc(ex+dx*z*.025,ey+dy*z*.025,z*.047,0,Math.PI*2);c.fill()}
-      if(s.tick%40<9){const tx=hx+dx*z*.48,ty=hy+dy*z*.48;c.strokeStyle="#f04455";c.lineWidth=Math.max(1,z*.04);c.beginPath();c.moveTo(tx,ty);c.lineTo(tx+dx*z*.2,ty+dy*z*.2);c.moveTo(tx+dx*z*.17,ty+dy*z*.17);c.lineTo(tx+dx*z*.23+px*z*.07,ty+dy*z*.23+py*z*.07);c.stroke()}
-    }
-    if(s.food){const X=(s.food.x+.5)*z,Y=(s.food.y+.5)*z;c.save();c.shadowColor="#ff423c";c.shadowBlur=z*.38;const ag=c.createRadialGradient(X-z*.09,Y-z*.1,z*.02,X,Y,z*.27);ag.addColorStop(0,"#ffb47f");ag.addColorStop(.25,"#ff5a4e");ag.addColorStop(1,"#a51522");c.fillStyle=ag;c.beginPath();c.arc(X,Y,z*.25,0,Math.PI*2);c.fill();c.shadowBlur=0;c.strokeStyle="#6f3f23";c.lineWidth=z*.05;c.beginPath();c.moveTo(X,Y-z*.2);c.lineTo(X+z*.05,Y-z*.35);c.stroke();leaf(X+z*.13,Y-z*.32,z*.13,-.5,"#4f9f38");c.restore()}
+    drawSnake(c,s,z,skin,settings);
   }
   if (s.game === "maze") {
     for (let y = 0; y < s.height; y++)
