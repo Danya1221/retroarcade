@@ -43,6 +43,20 @@ export function generate(seed, rareEvent = 0.08) {
     map[p.y + dy * 2][p.x + dx * 2] = 0;
     stack.push({ x: p.x + dx * 2, y: p.y + dy * 2 });
   }
+  // Widen selected corridors and add loops so the maze reads closer and roomier
+  // on a phone instead of becoming a dense one-cell Pac-style grid.
+  for (let y=2;y<h-2;y++) for(let x=2;x<w-2;x++) {
+    if (map[y][x] !== 1 || random(r) > .22) continue;
+    const horiz = map[y][x-1]===0 && map[y][x+1]===0;
+    const vert = map[y-1][x]===0 && map[y+1][x]===0;
+    if (horiz || vert) map[y][x]=0;
+  }
+  // A handful of broad hubs gives enemies/player room to pass and fight.
+  for (let i=0;i<5;i++) {
+    const cx=3+2*Math.floor(random(r)*12), cy=3+2*Math.floor(random(r)*8);
+    for(let yy=cy-1;yy<=cy+1;yy++) for(let xx=cx-1;xx<=cx+1;xx++)
+      if(xx>0&&yy>0&&xx<w-1&&yy<h-1) map[yy][xx]=0;
+  }
   // Carve connected rooms around existing maze cells, retaining the outer shell.
   const rooms = [];
   for (let i = 0; i < 7; i++) {
