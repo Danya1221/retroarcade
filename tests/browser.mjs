@@ -59,7 +59,37 @@ assert.equal(
   false,
   "mobile overflow",
 );
+const packets = [];
+page.on("request", (request) => {
+  if (request.url().endsWith("/api/session/sync")) packets.push(request.postDataJSON());
+});
+await page.locator('[data-play="platformer"]').click();
+await page.locator('[data-level="1"]').click();
+await page.locator("#game").waitFor();
+const right = await page.locator('[data-key="2"]').boundingBox();
+const jump = await page.locator('[data-key="16"]').boundingBox();
+const cdp = await page.context().newCDPSession(page);
+await cdp.send("Input.dispatchTouchEvent", {
+  type: "touchStart",
+  touchPoints: [right, jump].map((r, id) => ({ x: r.x + r.width / 2, y: r.y + r.height / 2, id })),
+});
+await page.waitForTimeout(500);
+await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+await page.locator("#pause").click();
+await page.getByText("Сохранено ✓", { exact: true }).waitFor();
+assert.ok(packets.some(p => p.inputs.some(i => (i & 18) === 18)), "simultaneous movement and jump");
+await page.screenshot({ path: "test-results/platformer-mobile.png", fullPage: true });
+await page.locator("#exit").click();
+await page.locator("#resume").waitFor();
+await page.reload();
+await page.locator("#resume").click();
+await page.locator("#game").waitFor();
+await page.locator("#exit").click();
+await page.locator("#abandon").click();
+await page.locator('[data-play="maze"]').last().click();
+await page.locator("#game").waitFor();
+await page.screenshot({ path: "test-results/maze-mobile.png", fullPage: true });
 assert.deepEqual(errors, []);
-console.log("Browser hub/navigation/admin/mobile checks passed");
+console.log("Browser hub/navigation/admin/mobile/multitouch/recovery checks passed");
 await browser.close();
 server.kill();
