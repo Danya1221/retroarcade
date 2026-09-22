@@ -3,7 +3,16 @@ import { ApiError } from "./errors.js";
 export const defaults = { skins, achievements, challenges };
 export async function catalog(c) {
   const r = await c.query("SELECT value FROM settings WHERE key='catalog'");
-  return r.rows[0]?.value || structuredClone(defaults);
+  const saved = r.rows[0]?.value;
+  if (!saved) return structuredClone(defaults);
+  // Keep admin-edited catalog values, but inherit newly added cosmetic fields
+  // from built-ins so existing Railway databases gain richer themes safely.
+  const merged = structuredClone(saved);
+  merged.skins = (merged.skins || []).map((item) => ({
+    ...(defaults.skins.find((x) => x.id === item.id) || {}),
+    ...item,
+  }));
+  return merged;
 }
 export function validateCatalog(value) {
   const bad = (message) => {
