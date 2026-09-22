@@ -86,11 +86,11 @@ function modal(html) {
   d.showModal();
   return d;
 }
-function skinColor(game) {
+function equippedSkin(game) {
   return (
     data.skins.find(
       (s) => s.id === (data.user.equipped[game] || game + "-base"),
-    )?.color || "#bdff70"
+    ) || { id: game + "-base", game, color: "#bdff70", theme: "base" }
   );
 }
 async function refresh() {
@@ -190,7 +190,7 @@ async function launch(session) {
     session,
     api,
     settings,
-    skinColor(session.state.game),
+    equippedSkin(session.state.game),
     async () => {
       await refresh();
       navigate();
