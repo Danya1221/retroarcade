@@ -1165,3 +1165,11 @@ button.primary{box-shadow:0 0 28px var(--glow),inset 0 1px #fff8}
  .sidebar{display:block!important;position:fixed!important;left:6%!important;right:6%!important;bottom:8px!important;width:88%!important;height:62px!important;background:#060a13ee!important;border:2px solid #17345f!important;border-radius:4px!important;z-index:50!important;padding:3px!important}
  .sidebar nav{grid-template-columns:repeat(4,1fr)!important}.sidebar nav button{display:none!important}.sidebar nav button[data-nav="games"],.sidebar nav button[data-nav="leaderboard"],.sidebar nav button[data-nav="collection"],.sidebar nav button[data-nav="profile"]{display:flex!important;height:52px!important;font-size:6px!important;border:0!important;background:transparent!important}.sidebar nav button.active{color:#ff9d2b!important;box-shadow:inset 0 -3px #ff9d2b!important}.sidebar nav button b{font-size:15px!important}
 }
+
+/* Formula gets a wide early-90s console-racer viewport, not the Snake cabinet proportions */
+.play-shell.is-mobile:has(.play-stage) .play-stage{max-width:100%}
+@media(max-width:600px){
+ .play-shell.is-mobile{padding-top:2px}
+ .play-shell.is-mobile .play-top{height:58px;min-height:58px}
+ .play-shell.is-mobile .play-stage{margin-top:2px}
+}
