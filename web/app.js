@@ -231,7 +231,7 @@ function collection(filter = "ALL") {
       .map((s) => {
         const owned = data.owned.includes(s.id),
           equipped = (data.user.equipped[s.game] || s.game + "-base") === s.id;
-        return `<article class="skin"><div class="skin-preview" style="color:${s.color || "#52596b"}">${s.hidden ? "?" : "▟▙"}</div><small style="color:${s.color || "#989cae"}">${s.rarity} / ${s.game.toUpperCase()}</small><strong>${esc(s.name || "UNKNOWN")}</strong><button class="small" data-skin="${s.id}" data-owned="${owned}" ${equipped || (!owned && !s.cost) ? "disabled" : ""}>${equipped ? "НАДЕТО" : owned ? "НАДЕТЬ" : s.cost ? "◈ " + s.cost : "НАЙДИ В ИГРЕ"}</button></article>`;
+        return `<article class="skin"><div class="skin-preview theme-preview" style="--skin:${s.color || "#52596b"};--skin-bg:${s.background || "#151923"};--skin-enemy:${s.enemy || "#f28dad"};--skin-terrain:${s.terrain || "#47445e"}">${s.hidden ? '<b class="skin-unknown">?</b>' : '<i class="preview-moon"></i><i class="preview-ground"></i><i class="preview-enemy">◆</i><i class="preview-player">●</i>'}</div><small style="color:${s.color || "#989cae"}">${s.rarity} / ${s.game.toUpperCase()}</small><strong>${esc(s.name || "UNKNOWN")}</strong><span class="muted" style="font-size:10px">ПЕРСОНАЖ · МИР · ВРАГИ</span><button class="small" data-skin="${s.id}" data-owned="${owned}" ${equipped || (!owned && !s.cost) ? "disabled" : ""}>${equipped ? "НАДЕТО" : owned ? "НАДЕТЬ" : s.cost ? "◈ " + s.cost : "НАЙДИ В ИГРЕ"}</button></article>`;
       })
       .join(
         "",
