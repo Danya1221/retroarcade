@@ -225,14 +225,28 @@ export async function api(req, path, b, q) {
     if(!uuid(q.get("id"))) fail(400,"Неверная комната");
     const room=(await pool.query("SELECT id,code,game,mode,host_id,status,max_players,seed,started_at FROM multiplayer_rooms WHERE id=$1",[q.get("id")])).rows[0];
     if(!room) fail(404,"Комната не найдена");
-    const players=(await pool.query("SELECT user_id,name,ready,slot,seq,input,last_seen FROM multiplayer_players WHERE room_id=$1 ORDER BY slot",[room.id])).rows;
+    const players=(await pool.query("SELECT user_id,name,ready,slot,seq,input,last_seen,state,finished,score,finish_position FROM multiplayer_players WHERE room_id=$1 ORDER BY slot",[room.id])).rows;
     return {room,players,botSlots:room.mode==="mixed"?Math.max(0,room.max_players-players.length):0};
   }
   if (method === "POST" && path === "/api/multiplayer/input") {
     if(!uuid(b.id)||!Number.isInteger(b.seq)||!Number.isInteger(b.input)||b.input<0||b.input>63) fail(400,"Неверный ввод");
-    const r=await pool.query("UPDATE multiplayer_players SET input=$3,seq=$4,last_seen=now() WHERE room_id=$1 AND user_id=$2 AND seq<$4 RETURNING seq",[b.id,user.id,b.input,b.seq]);
+    const st=b.state&&typeof b.state==="object"?b.state:{}; const safeState={x:Number(st.x)||0,y:Number(st.y)||0,dir:Number(st.dir)||0,speed:Number(st.speed)||0,distance:Number(st.distance)||0,lap:Number(st.lap)||1,hp:Number(st.hp)||0,shots:Array.isArray(st.shots)?st.shots.slice(0,20):[]};
+    const r=await pool.query("UPDATE multiplayer_players SET input=$3,seq=$4,last_seen=now(),state=$5,score=$6,finished=$7 WHERE room_id=$1 AND user_id=$2 AND seq<$4 RETURNING seq",[b.id,user.id,b.input,b.seq,safeState,Math.max(0,Number(b.score)||0),b.finished===true]);
     if(!r.rowCount) return {ok:true,ignored:true};
     return {ok:true,seq:r.rows[0].seq};
+  }
+  if (method === "POST" && path === "/api/multiplayer/finish") {
+    if(!uuid(b.id)) fail(400,"Неверная комната");
+    return transaction(async c=>{
+      const room=(await c.query("SELECT * FROM multiplayer_rooms WHERE id=$1 FOR UPDATE",[b.id])).rows[0]; if(!room) fail(404,"Комната не найдена");
+      await c.query("UPDATE multiplayer_players SET finished=true,score=GREATEST(score,$3),last_seen=now() WHERE room_id=$1 AND user_id=$2",[b.id,user.id,Math.max(0,Number(b.score)||0)]);
+      const ps=(await c.query("SELECT user_id,score,finished,last_seen FROM multiplayer_players WHERE room_id=$1 ORDER BY score DESC,last_seen",[b.id])).rows;
+      if(ps.every(p=>p.finished||Date.now()-new Date(p.last_seen).getTime()>15000)){
+        for(let i=0;i<ps.length;i++)await c.query("UPDATE multiplayer_players SET finish_position=$3 WHERE room_id=$1 AND user_id=$2",[b.id,ps[i].user_id,i+1]);
+        await c.query("UPDATE multiplayer_rooms SET status='finished',updated_at=now() WHERE id=$1",[b.id]);
+      }
+      return {ok:true};
+    });
   }
   if (method === "GET" && path === "/api/daily-maze")
     return { day: dayKey(), seed: await daily(pool) };
