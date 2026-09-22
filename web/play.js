@@ -33,7 +33,9 @@ export function play(session, api, settings, skin, onExit, onResult, toast, mult
     mpSeq = 0,
     mpLastSend = 0,
     mpPoll = 0,
-    remotePlayers = [];
+    remotePlayers = [],
+    mpHitSeen = new Set(),
+    mpFinishedSent = false;
   const keyMap = {
     ArrowUp: 1,
     KeyW: 1,
@@ -246,7 +248,12 @@ export function play(session, api, settings, skin, onExit, onResult, toast, mult
       });
       state._visualBody = snakeVisual;
     }
-    if(multiplayer && now-mpPoll>180){mpPoll=now;api("/multiplayer/room?id="+multiplayer.roomId).then(x=>{remotePlayers=x.players.filter(p=>Number(p.slot)!==Number(multiplayer.slot));}).catch(()=>{});}
+    if(multiplayer && now-mpPoll>180){mpPoll=now;api("/multiplayer/room?id="+multiplayer.roomId).then(x=>{
+      const me=x.players.find(p=>Number(p.slot)===Number(multiplayer.slot));remotePlayers=x.players.filter(p=>Number(p.slot)!==Number(multiplayer.slot));
+      if(state.game==="tanks"&&me?.state?.hp!==undefined&&Number(me.state.hp)<state.player.hp)state.player.hp=Number(me.state.hp);
+      if(state.game==="tanks"){for(const p of remotePlayers){for(const q of p.state?.shots||[]){const key=p.user_id+":"+p.seq+":"+Math.round(q.x*10)+":"+Math.round(q.y*10);if(!mpHitSeen.has(key)&&Math.hypot((q.x||0)-state.player.x,(q.y||0)-state.player.y)<.7){mpHitSeen.add(key);api("/multiplayer/hit",{id:multiplayer.roomId,target:String(multiplayer.userId)}).catch(()=>{})}}}}
+      if(x.room.status==="finished"&&!mpFinishedSent){mpFinishedSent=true;toast("ONLINE · матч завершён");}
+    }).catch(()=>{});}
     state._remotePlayers=remotePlayers;
     render(c, state, color, settings, skin);
     hud.textContent =
