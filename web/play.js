@@ -221,7 +221,9 @@ export function play(session, api, settings, skin, onExit, onResult, toast) {
       }
       const elapsedTicks = state.tick - state.moveTick + acc / (1000 / 30);
       const t = Math.max(0, Math.min(1, elapsedTicks / interval));
-      const smooth = t * t * (3 - 2 * t);
+      // Constant-speed interpolation: no easing at cell boundaries, so the
+      // snake never appears to brake and accelerate every grid step.
+      const smooth = t;
       snakeVisual = snakeTo.map((target, i) => {
         const from = snakeFrom[i] || target;
         return {
