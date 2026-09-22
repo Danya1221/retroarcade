@@ -213,8 +213,8 @@ export function play(session, api, settings, skin, onExit, onResult, toast) {
         snakeTo = state.body.map((p) => ({ x: p.x, y: p.y }));
         snakeFrom = snakeTo.map((p, i) => {
           if (i === 0) return previous[0] ? { ...previous[0] } : { ...p };
-          return previous[Math.min(i - 1, previous.length - 1)]
-            ? { ...previous[Math.min(i - 1, previous.length - 1)] }
+          return previous[Math.min(i, previous.length - 1)]
+            ? { ...previous[Math.min(i, previous.length - 1)] }
             : { ...p };
         });
         snakeMoveTick = state.moveTick;
@@ -237,7 +237,9 @@ export function play(session, api, settings, skin, onExit, onResult, toast) {
     hud.textContent =
       String(state.score).padStart(5, "0") +
       (state.hp !== undefined ? " · ♥ " + state.hp : "") +
-      (state.game === "maze" ? " · ⚿ " + state.keys : "");
+      (state.game === "maze" ? " · ⚿ " + state.keys + " · ● " + state.pelletsLeft + (state.exitOpen ? " · EXIT OPEN" : "") : "") +
+      (state.game === "mines" ? " · ⚑ " + state.flags.length + "/12" : "") +
+      (state.game === "merge2048" ? " · MAX " + Math.max(...state.board.flat()) : "");
     if (now - lastSave > 4000 && !busy) {
       lastSave = now;
       if (inputs.length || pending) save();
