@@ -81,7 +81,8 @@ export function render(c, s, color = "#bdff70", settings = {}) {
     for (const p of s.moving || []) tile(c, p.x * z, p.y * z, z, "#ffb578", 1);
     if (s.bonus) gem(c, s.bonus.x * z, s.bonus.y * z, z * 0.8, "#c69eff");
     for (const p of s.walls) tile(c, p.x * z, p.y * z, z, "#74566f", 1);
-    s.body.forEach((p, i) => {
+    const snakeBody = s._visualBody || s.body;
+    snakeBody.forEach((p, i) => {
       rect(
         c,
         p.x * z + 2,
