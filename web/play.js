@@ -194,7 +194,7 @@ export function play(session, api, settings, skin, onExit, onResult, toast, mult
           0,
         );
         tapQueue = 0;
-        if (multiplayer && performance.now()-mpLastSend>65) { mpLastSend=performance.now(); api("/multiplayer/input",{id:multiplayer.roomId,seq:++mpSeq,input}).catch(()=>{}); }
+        if (multiplayer && performance.now()-mpLastSend>65) { mpLastSend=performance.now(); const st=state.game==="racer"?{x:state.x,speed:state.speed,distance:state.distance,lap:state.lap}:{x:state.player.x,y:state.player.y,dir:state.player.dir,hp:state.player.hp,shots:state.shots.filter(q=>!q.enemy).slice(-12)}; api("/multiplayer/input",{id:multiplayer.roomId,seq:++mpSeq,input,state:st,score:state.score,finished:state.over}).catch(()=>{}); }
         const score = state.score,
           hp = state.hp;
         tick(state, input);
@@ -261,7 +261,7 @@ export function play(session, api, settings, skin, onExit, onResult, toast, mult
       lastSave = now;
       if (inputs.length || pending) save();
     }
-    if (state.over && !busy && !paused) save(true);
+    if (state.over && !busy && !paused) { if(multiplayer) api("/multiplayer/finish",{id:multiplayer.roomId,score:state.score}).catch(()=>{}); save(true); }
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
