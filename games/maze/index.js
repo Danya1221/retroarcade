@@ -46,6 +46,13 @@ function hit(s) {
 export function step(s, input) {
   if (input & 32 && s.tick >= s.cooldown) {
     s.cooldown = s.tick + 18;
+    for (const wall of s.fakeWalls || []) {
+      if (!wall.revealed && distance(s.player, wall) <= 1) {
+        wall.revealed = true;
+        s.map[wall.y][wall.x] = 0;
+        s.score += 35;
+      }
+    }
     for (const e of s.enemies) {
       if (distance(e, s.player) <= 2) {
         e.hp -= s.tick < s.powerUntil ? 2 : 1;
@@ -75,6 +82,17 @@ export function step(s, input) {
         if (r.type === "event" && s.rare && s.keyTaken) {
           s.boxes++;
           s.score += 100;
+          s.lootedRooms.push(i);
+        }
+        if (r.type === "rare" && s.rare) {
+          s.hp = 6;
+          s.powerUntil = s.tick + 450;
+          s.score += 175;
+          s.lootedRooms.push(i);
+        }
+        if (r.type === "secret") {
+          s.secrets++;
+          s.score += 125;
           s.lootedRooms.push(i);
         }
       }
