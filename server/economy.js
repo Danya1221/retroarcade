@@ -54,6 +54,8 @@ export async function reward(c, u, s, settings) {
   );
   const before = levelFromXP(u.xp, settings.levelXP);
   u.xp += earned;
+  const coins = Math.min(75, Math.max(1, Math.floor(st.score / 20)) + (st.won ? 10 : 0));
+  u.coins = (u.coins || 0) + coins;
   u.stats.runs = (u.stats.runs || 0) + 1;
   u.stats[s.game] = (u.stats[s.game] || 0) + 1;
   u.stats.secrets = (u.stats.secrets || 0) + st.secrets;
@@ -132,11 +134,12 @@ export async function reward(c, u, s, settings) {
         [u.id, ch.id, ch.period === "day" ? dayKey() : weekKey(), n],
       );
   }
-  await c.query("UPDATE users SET xp=$2,progress=$3,stats=$4 WHERE id=$1", [
+  await c.query("UPDATE users SET xp=$2,progress=$3,stats=$4,coins=$5 WHERE id=$1", [
     u.id,
     u.xp,
     u.progress,
     u.stats,
+    u.coins,
   ]);
   return {
     score: st.score,
@@ -144,6 +147,7 @@ export async function reward(c, u, s, settings) {
     newRecord,
     won: st.won,
     xp: earned,
+    coins,
     boxes: gainedBoxes,
     secrets: st.secrets,
     achievements: newAchievements,
