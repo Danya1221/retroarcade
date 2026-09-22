@@ -235,6 +235,19 @@ export async function api(req, path, b, q) {
     if(!r.rowCount) return {ok:true,ignored:true};
     return {ok:true,seq:r.rows[0].seq};
   }
+  if (method === "POST" && path === "/api/multiplayer/hit") {
+    if(!uuid(b.id)||!/^\d+$/.test(String(b.target))) fail(400,"Неверное попадание");
+    return transaction(async c=>{
+      const room=(await c.query("SELECT game,status FROM multiplayer_rooms WHERE id=$1 FOR UPDATE",[b.id])).rows[0];
+      if(!room||room.game!=="tanks"||room.status!=="playing") fail(409,"Матч не активен");
+      const target=(await c.query("SELECT state,finished FROM multiplayer_players WHERE room_id=$1 AND user_id=$2 FOR UPDATE",[b.id,b.target])).rows[0];
+      if(!target||target.finished) return {ok:true,ignored:true};
+      const st=target.state||{},hp=Math.max(0,(Number(st.hp)||3)-1);st.hp=hp;
+      await c.query("UPDATE multiplayer_players SET state=$3,finished=CASE WHEN $4=0 THEN true ELSE finished END WHERE room_id=$1 AND user_id=$2",[b.id,b.target,st,hp]);
+      if(hp===0)await c.query("UPDATE multiplayer_players SET score=score+250 WHERE room_id=$1 AND user_id=$2",[b.id,user.id]);
+      return {ok:true,hp};
+    });
+  }
   if (method === "POST" && path === "/api/multiplayer/finish") {
     if(!uuid(b.id)) fail(400,"Неверная комната");
     return transaction(async c=>{
