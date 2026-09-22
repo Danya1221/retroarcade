@@ -1117,3 +1117,30 @@ button.primary{box-shadow:0 0 28px var(--glow),inset 0 1px #fff8}
  .play-shell.is-mobile .action{width:min(22vw,112px)!important;height:min(22vw,112px)!important}
  .play-shell.is-mobile .control-strip{margin-top:4px;padding:9px 12px}
 }
+
+/* Mobile arcade menu — compact, thumb-friendly library */
+@media(max-width:760px){
+ .console-main{padding:0 8px 92px!important}
+ .console-topbar{display:none}
+ .console-screen-shell{min-height:auto;padding:30px 8px 18px!important;border-radius:18px!important;overflow:visible}
+ .console-home-head{align-items:center;padding:2px 5px 12px!important}
+ .console-home-head .eyebrow{font-size:8px}
+ .console-home-head h1{font-size:27px!important;letter-spacing:-1px;margin-top:3px}
+ .home-wallet b{font-size:16px!important}.home-wallet span{font-size:7px}
+ .game-selector{display:grid!important;grid-template-columns:1fr 1fr!important;gap:9px!important;overflow:visible!important;margin:0!important;padding:12px 0 14px!important;scroll-snap-type:none!important}
+ .game-tile{width:100%!important;min-width:0!important;flex:none!important;height:218px!important;border-radius:15px 15px 22px 15px!important;scroll-snap-align:none!important}
+ .game-tile canvas{height:58%!important}
+ .game-tile>div{padding:9px 10px!important;gap:3px!important}
+ .game-tile small{font-size:7px}.game-tile strong{font-size:13px!important}.game-tile em{font-size:8px}
+ .game-tile>i{width:25px;height:25px;right:8px;bottom:8px;font-size:11px}
+ .game-number{left:7px;top:7px;padding:4px 6px}
+ .console-actions{grid-template-columns:1fr 1fr!important;gap:9px!important;padding:0!important}
+ .daily-action{grid-column:1/-1!important}
+ .console-action{min-height:66px!important;padding:11px 13px!important;border-radius:13px!important}
+ .console-action b{font-size:14px}.console-action span{font-size:7px}.console-action i{font-size:21px}
+ .sidebar{height:78px!important;padding:7px 8px calc(7px + env(safe-area-inset-bottom))!important}
+ .sidebar .brand,.sidebar-foot{display:none!important}
+ .sidebar nav{display:grid!important;grid-template-columns:repeat(6,1fr)!important;gap:3px!important;width:100%}
+ .sidebar nav button{min-width:0!important;height:58px!important;padding:4px 1px!important;font-size:6px!important;gap:3px!important}
+ .sidebar nav button b{font-size:16px!important}
+}
