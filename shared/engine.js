@@ -4,7 +4,9 @@ import * as maze from "../games/maze/index.js";
 import * as platformer from "../games/platformer/index.js";
 import * as mines from "../games/mines/index.js";
 import * as merge2048 from "../games/merge2048/index.js";
-const modules = { snake, maze, platformer, mines, merge2048 };
+import * as racer from "../games/racer/index.js";
+import * as tanks from "../games/tanks/index.js";
+const modules = { snake, maze, platformer, mines, merge2048, racer, tanks };
 export const TICK_RATE = 30;
 export function createGame(game, seed, level = 1, options = {}) {
   if (!modules[game]) throw Error("Unknown game");
