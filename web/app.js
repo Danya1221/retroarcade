@@ -34,7 +34,8 @@ const names = {
   games: "АРКАДА",
   leaderboard: "РЕЙТИНГ",
   challenges: "ИСПЫТАНИЯ",
-  collection: "КОЛЛЕКЦИЯ",
+  cases: "КЕЙСЫ",
+  collection: "СКИНЫ",
   profile: "ПРОФИЛЬ",
   settings: "НАСТРОЙКИ",
   admin: "ADMIN",
@@ -105,11 +106,11 @@ function shell() {
       .filter(([k]) => k !== "admin" || u.admin)
       .map(
         ([k, n], i) =>
-          `<button data-nav="${k}" class="${view === k ? "active" : ""}"><b>${["▦", "♜", "◎", "▣", "☺", "⚙", "⌘"][i]}</b>${n}</button>`,
+          `<button data-nav="${k}" class="${view === k ? "active" : ""}"><b>${["▦", "♜", "◎", "◈", "▣", "☺", "⚙", "⌘"][i]}</b>${n}</button>`,
       )
       .join(
         "",
-      )}</nav><div class="sidebar-foot"><span class="online-dot"></span>SYSTEM ONLINE<br>НАЙДИ СВОЮ ЧАСТОТУ<br><br>RETRO ARCADE / V.01</div></aside><main class="main console-main"><header class="topbar console-topbar"><span class="breadcrumbs">ARCADE / ${names[view] || "GAMES"}</span><div class="user-pill"><span style="color:var(--green)">◈ ${u.shards}</span><div class="avatar">${esc(u.name.slice(0, 2).toUpperCase())}</div><div>${esc(u.name)} <span class="muted">LVL ${u.level}</span><div class="xp-line"><i style="width:${Math.min(100, (u.xp % 250) / 2.5)}%"></i></div></div></div></header><div class="console-screen-shell"><div class="screen-leds"><i></i><span>RETROGAME OS / ONLINE</span></div><div id="page"></div></div></main></div>`;
+      )}</nav><div class="sidebar-foot"><span class="online-dot"></span>SYSTEM ONLINE<br>НАЙДИ СВОЮ ЧАСТОТУ<br><br>RETRO ARCADE / V.01</div></aside><main class="main console-main"><header class="topbar console-topbar"><span class="breadcrumbs">ARCADE / ${names[view] || "GAMES"}</span><div class="user-pill"><span class="wallet-coin">● ${u.coins || 0}</span><span style="color:var(--green)">◈ ${u.shards}</span><div class="avatar">${esc(u.name.slice(0, 2).toUpperCase())}</div><div>${esc(u.name)} <span class="muted">LVL ${u.level}</span><div class="xp-line"><i style="width:${Math.min(100, (u.xp % 250) / 2.5)}%"></i></div></div></div></header><div class="console-screen-shell"><div class="screen-leds"><i></i><span>RETROGAME OS / ONLINE</span></div><div id="page"></div></div></main></div>`;
   bind("[data-nav]", (el) => navigate(el.dataset.nav));
 }
 async function navigate(next = "games") {
@@ -117,6 +118,7 @@ async function navigate(next = "games") {
   shell();
   try {
     if (next === "games") hub();
+    if (next === "cases") cases();
     if (next === "collection") collection();
     if (next === "profile") profile();
     if (next === "settings") preferences();
@@ -218,9 +220,15 @@ async function launch(session) {
     toast,
   );
 }
+function cases() {
+  const count=boxes(), price=100;
+  $("#page").innerHTML=`<div class="eyebrow">ARCADE VAULT</div><div class="section-heading"><h2>Кейсы</h2><span class="wallet-coin">● ${data.user.coins || 0} МОНЕТ</span></div><div class="case-shop"><article class="case-card"><div class="case-visual"><i></i><b>?</b><span>RETRO<br>CASE</span></div><div class="case-info"><small>БАЗОВЫЙ КЕЙС</small><h3>UNKNOWN SIGNAL</h3><p>Случайный скин. Чем выше редкость — тем реже сигнал.</p><div class="case-price">● ${price}</div><button id="buy-case" class="primary" ${(data.user.coins||0)<price?"disabled":""}>КУПИТЬ КЕЙС</button></div></article></div><div class="panel row case-owned"><div><div class="eyebrow">ИНВЕНТАРЬ</div><h3>Кейсов: ${count}</h3></div><button id="open-case" ${count?"":"disabled"}>ОТКРЫТЬ</button></div>`;
+  bind("#buy-case", async()=>{await api("/loot/buy",{});await refresh();cases()});
+  bind("#open-case", openBox);
+}
 function collection(filter = "ALL") {
   $("#page").innerHTML =
-    `<div class="eyebrow">СОБЕРИ СВОЙ СИГНАЛ</div><div class="section-heading"><h2>Коллекция</h2><span>${data.owned.length} / ??? DISCOVERED</span></div><div class="panel row" style="margin-bottom:24px"><div><h3>▣ Неизвестный картридж × ${boxes()}</h3><span class="muted">Косметика внутри. Повторы превращаются в осколки.</span></div><button id="open-box" class="primary" ${boxes() ? "" : "disabled"}>ОТКРЫТЬ</button></div><div class="filters">${["ALL", "OWNED", "LOCKED", "COMMON", "RARE", "EPIC", "LEGENDARY", "SECRET"].map((f) => `<button class="small ${filter === f ? "active" : ""}" data-filter="${f}">${f}</button>`).join("")}</div><div class="collection">${data.skins
+    `<div class="eyebrow">SKIN LOCKER</div><div class="section-heading"><h2>Скины</h2><span>${data.owned.length} / ??? DISCOVERED</span></div><div class="filters">${["ALL", "OWNED", "LOCKED", "COMMON", "RARE", "EPIC", "LEGENDARY", "SECRET"].map((f) => `<button class="small ${filter === f ? "active" : ""}" data-filter="${f}">${f}</button>`).join("")}</div><div class="collection">${data.skins
       .filter(
         (s) =>
           filter === "ALL" ||
@@ -244,7 +252,6 @@ function collection(filter = "ALL") {
     await refresh();
     collection(filter);
   });
-  bind("#open-box", openBox);
 }
 async function openBox() {
   let id = localStorage.getItem("pending-loot");
