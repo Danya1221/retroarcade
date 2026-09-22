@@ -102,20 +102,23 @@ export function render(c, s, color = "#bdff70", settings = {}, skin = {}) {
     oy = (h - z * (s.game === "platformer" ? 17 : s.height)) / 2;
   c.translate(ox, oy);
   if(s.game==="racer"){
-    const W=z*s.width,H=z*s.height,hz=H*.29,vanY=hz+s.hill*z*1.8;
-    c.fillStyle="#75b9e7";c.fillRect(0,0,W,vanY);c.fillStyle="#5c913e";c.fillRect(0,vanY,W,H-vanY);
-    // distant hills / grandstands, like early-90s 16-bit Formula racers
-    c.fillStyle="#426c55";for(let i=0;i<9;i++){const x=i*W/8;c.beginPath();c.moveTo(x-W*.12,vanY);c.lineTo(x,vanY-z*(1.2+(i%3)*.35));c.lineTo(x+W*.14,vanY);c.fill()}
-    c.fillStyle="#e8e5d7";for(let i=0;i<8;i++)c.fillRect(i*W/7,vanY-z*.38,z*.08,z*.38);
-    const slices=44;
-    for(let i=0;i<slices;i++){const p=i/(slices-1),y=vanY+(H-vanY)*p*p,yn=vanY+(H-vanY)*((i+1)/slices)**2,road=W*(.055+p*.52),bend=s.curve*W*.22*(1-p)*p,cx=W/2+bend;c.fillStyle=i%2?"#34383b":"#2c3033";c.beginPath();c.moveTo(cx-road,y);c.lineTo(cx+road,y);c.lineTo(cx+road*1.04,yn);c.lineTo(cx-road*1.04,yn);c.fill();const kerb=Math.max(2,z*(.08+p*.18));c.fillStyle=(i>>1)%2?"#f5f0df":"#d8403b";c.fillRect(cx-road-kerb,y,kerb,Math.max(2,yn-y+1));c.fillRect(cx+road,y,kerb,Math.max(2,yn-y+1))}
-    const f1=(lane,depth,col,player=false)=>{const p=Math.max(.06,Math.min(1,1-depth/440)),y=vanY+(H-vanY)*p*p,rw=W*(.055+p*.52),x=W/2+s.curve*W*.22*(1-p)*p+lane*rw*.72,sc=z*(.22+p*(player?1.55:1.05));c.save();c.translate(x,y);c.fillStyle="#111";c.fillRect(-sc*.72,-sc*.04,sc*.27,sc*.58);c.fillRect(sc*.45,-sc*.04,sc*.27,sc*.58);c.fillStyle=col;c.fillRect(-sc*.66,sc*.05,sc*1.32,sc*.18);c.beginPath();c.moveTo(-sc*.48,sc*.26);c.lineTo(-sc*.27,-sc*.2);c.lineTo(sc*.27,-sc*.2);c.lineTo(sc*.48,sc*.26);c.fill();c.fillStyle="#151b22";c.beginPath();c.ellipse(0,-sc*.12,sc*.18,sc*.13,0,0,Math.PI*2);c.fill();c.fillStyle="#e7edf1";c.fillRect(-sc*.07,-sc*.15,sc*.14,sc*.1);c.restore()};
-    for(const a of s.cars)if(a.d>0&&a.d<440)f1(a.lane,a.d,"#f2c33d");
-    for(const p of s._remotePlayers||[]){const lane=Number(p.state?.x)||0,depth=Math.max(8,(Number(p.state?.distance)||0)-s.distance+70);f1(lane,depth,["#55cfff","#d58cff","#78e78a","#ff9b4d"][Number(p.slot)%4])}
-    f1(s.x,0,"#e83f35",true);
-    // cockpit/dashboard band
-    c.fillStyle="#11151a";c.fillRect(0,H-z*1.35,W,z*1.35);c.fillStyle="#202832";c.fillRect(W*.29,H-z*1.3,W*.42,z*1.2);c.strokeStyle="#6b7680";c.lineWidth=z*.08;c.strokeRect(W*.3,H-z*1.2,W*.4,z*.98);c.fillStyle="#f1e9d5";c.font=`bold ${z*.42}px monospace`;c.textAlign="center";c.fillText(String(Math.round(s.speed*115)).padStart(3,"0")+" KM/H",W/2,H-z*.65);c.fillStyle="#ffcf45";c.font=`bold ${z*.3}px monospace`;c.fillText("GEAR "+s.gear+"   "+s.trackName,W/2,H-z*.2);
-    const cd=s.coinD-s.distance;if(cd>0&&cd<440){const p=Math.max(.08,1-cd/440),y=vanY+(H-vanY)*p*p,rw=W*(.055+p*.52),x=W/2+s.coinLane*rw*.72;c.fillStyle="#ffd84e";c.beginPath();c.arc(x,y,z*(.07+p*.14),0,Math.PI*2);c.fill()}
+    const W=z*s.width,H=z*s.height,horizon=H*.31+s.hill*z*.7;
+    c.fillStyle="#79b9df";c.fillRect(0,0,W,horizon);
+    // layered 16-bit landscape
+    c.fillStyle="#3d6d50";c.beginPath();c.moveTo(0,horizon);for(let x=0;x<=W;x+=W/10)c.lineTo(x,horizon-z*(.7+((x/W*13)%1)*1.2));c.lineTo(W,horizon);c.fill();
+    c.fillStyle="#57923e";c.fillRect(0,horizon,W,H-horizon);
+    // road as one solid polygon; kerbs are separate quads
+    const N=48, pts=[];for(let i=0;i<=N;i++){const p=i/N,y=horizon+(H-horizon)*p*p,cx=W/2+s.curve*W*.12*p*(1-p),rw=W*(.035+p*.49);pts.push({p,y,cx,rw})}
+    c.fillStyle="#3a3d42";c.beginPath();c.moveTo(pts[0].cx-pts[0].rw,pts[0].y);for(const q of pts)c.lineTo(q.cx-q.rw,q.y);for(let i=pts.length-1;i>=0;i--){const q=pts[i];c.lineTo(q.cx+q.rw,q.y)}c.closePath();c.fill();
+    for(let i=0;i<N;i++){const q=pts[i],n=pts[i+1],kw=z*(.04+q.p*.2);c.fillStyle=(i>>1)%2?"#f4eee0":"#d8443d";c.beginPath();c.moveTo(q.cx-q.rw-kw,q.y);c.lineTo(q.cx-q.rw,q.y);c.lineTo(n.cx-n.rw,n.y);c.lineTo(n.cx-n.rw-kw*(1+n.p),n.y);c.fill();c.beginPath();c.moveTo(q.cx+q.rw,q.y);c.lineTo(q.cx+q.rw+kw,q.y);c.lineTo(n.cx+n.rw+kw*(1+n.p),n.y);c.lineTo(n.cx+n.rw,n.y);c.fill()}
+    // lane perspective marks
+    c.strokeStyle="#ffffff44";c.lineWidth=Math.max(1,z*.035);for(const lane of [-.34,.34]){c.beginPath();for(let i=4;i<pts.length;i++){const q=pts[i],x=q.cx+lane*q.rw;(i===4?c.moveTo(x,q.y):c.lineTo(x,q.y))}c.stroke()}
+    const f1=(lane,depth,col,player=false)=>{const p=player?1:Math.max(.08,Math.min(.9,1-depth/430)),q=pts[Math.min(N,Math.max(0,Math.round(p*N)))],x=q.cx+lane*q.rw*.7,y=player?H-z*2.35:q.y,sc=player?z*1.65:z*(.18+p*.95);c.save();c.translate(x,y);c.fillStyle="#101114";c.fillRect(-sc*.72,0,sc*.28,sc*.58);c.fillRect(sc*.44,0,sc*.28,sc*.58);c.fillStyle=col;c.fillRect(-sc*.78,sc*.15,sc*1.56,sc*.18);c.beginPath();c.moveTo(-sc*.48,sc*.35);c.lineTo(-sc*.3,-sc*.18);c.lineTo(-sc*.12,-sc*.42);c.lineTo(sc*.12,-sc*.42);c.lineTo(sc*.3,-sc*.18);c.lineTo(sc*.48,sc*.35);c.closePath();c.fill();c.fillStyle="#171b22";c.beginPath();c.ellipse(0,-sc*.18,sc*.17,sc*.16,0,0,Math.PI*2);c.fill();c.fillStyle="#eee";c.fillRect(-sc*.065,-sc*.24,sc*.13,sc*.08);c.restore()};
+    const visible=s.cars.filter(a=>a.d>5&&a.d<430).sort((a,b)=>b.d-a.d);for(const a of visible)f1(a.lane,a.d,["#f4c542","#4ec3e8","#eee","#65c46a"][Math.abs(Math.floor(a.d))%4]);
+    for(const p of s._remotePlayers||[]){const lane=Number(p.state?.x)||0,depth=Math.max(12,(Number(p.state?.distance)||0)-s.distance+70);if(depth<430)f1(lane,depth,["#55cfff","#d58cff","#78e78a","#ff9b4d"][Number(p.slot)%4])}
+    f1(s.x,0,"#e63d35",true);
+    // compact dashboard, kept inside canvas
+    const dh=z*1.25;c.fillStyle="#10141a";c.fillRect(0,H-dh,W,dh);c.fillStyle="#222a33";c.fillRect(W*.29,H-dh+z*.12,W*.42,dh-z*.2);c.strokeStyle="#66727e";c.lineWidth=z*.06;c.strokeRect(W*.3,H-dh+z*.18,W*.4,dh-z*.32);c.textAlign="center";c.fillStyle="#f4eee0";c.font=`bold ${z*.34}px monospace`;c.fillText(Math.round(s.speed*115)+" KM/H   G"+s.gear,W/2,H-z*.55);c.fillStyle="#ffcf45";c.font=`bold ${z*.22}px monospace`;c.fillText("P"+s.position+"  LAP "+Math.min(s.lap,s.laps)+"/"+s.laps+"  "+s.trackName,W/2,H-z*.18);
   } else if(s.game==="tanks"){
     const W=z*s.width,H=z*s.height;c.fillStyle="#243628";c.fillRect(0,0,W,H);for(let y=0;y<s.height;y++)for(let x=0;x<s.width;x++)if((x*13+y*7)%19===0){c.fillStyle="#304a32";c.fillRect(x*z,y*z,z,z)}
     const tank=(o,col)=>{const X=o.x*z,Y=o.y*z;c.save();c.translate(X,Y);c.rotate(o.dir*Math.PI/2);c.fillStyle="#151b16";c.fillRect(-z*.42,-z*.38,z*.18,z*.76);c.fillRect(z*.24,-z*.38,z*.18,z*.76);c.fillStyle=col;c.fillRect(-z*.3,-z*.32,z*.6,z*.64);c.fillStyle="#9aa46e";c.beginPath();c.arc(0,0,z*.22,0,Math.PI*2);c.fill();c.fillRect(-z*.06,-z*.55,z*.12,z*.6);c.restore()};
