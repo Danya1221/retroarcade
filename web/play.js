@@ -20,6 +20,7 @@ export function play(session, api, settings, color, onExit, onResult, toast) {
     last = performance.now(),
     acc = 0,
     lastSave = last,
+    snakeVisual = null,
     keys = new Set(),
     touch = new Map(),
     swipe = 0;
@@ -196,6 +197,19 @@ export function play(session, api, settings, color, onExit, onResult, toast) {
         }
       }
     } else acc = 0;
+    if (state.game === "snake") {
+      if (!snakeVisual || snakeVisual.length !== state.body.length) {
+        snakeVisual = state.body.map((p) => ({ x: p.x, y: p.y }));
+      }
+      const follow = 1 - Math.exp(-delta / 48);
+      for (let i = 0; i < state.body.length; i++) {
+        const target = state.body[i];
+        const v = snakeVisual[i] || (snakeVisual[i] = { x: target.x, y: target.y });
+        v.x += (target.x - v.x) * follow;
+        v.y += (target.y - v.y) * follow;
+      }
+      state._visualBody = snakeVisual;
+    }
     render(c, state, color, settings);
     hud.textContent =
       String(state.score).padStart(5, "0") +
