@@ -21,6 +21,9 @@ export function play(session, api, settings, color, onExit, onResult, toast) {
     acc = 0,
     lastSave = last,
     snakeVisual = null,
+    snakeFrom = null,
+    snakeTo = null,
+    snakeMoveTick = null,
     keys = new Set(),
     touch = new Map(),
     swipe = 0;
@@ -198,16 +201,33 @@ export function play(session, api, settings, color, onExit, onResult, toast) {
       }
     } else acc = 0;
     if (state.game === "snake") {
-      if (!snakeVisual || snakeVisual.length !== state.body.length) {
-        snakeVisual = state.body.map((p) => ({ x: p.x, y: p.y }));
+      const interval = Math.max(3, 9 - Math.floor(state.eaten / 6));
+      if (!snakeTo) {
+        snakeTo = state.body.map((p) => ({ x: p.x, y: p.y }));
+        snakeFrom = snakeTo.map((p) => ({ ...p }));
+        snakeMoveTick = state.moveTick;
       }
-      const follow = 1 - Math.exp(-delta / 48);
-      for (let i = 0; i < state.body.length; i++) {
-        const target = state.body[i];
-        const v = snakeVisual[i] || (snakeVisual[i] = { x: target.x, y: target.y });
-        v.x += (target.x - v.x) * follow;
-        v.y += (target.y - v.y) * follow;
+      if (state.moveTick !== snakeMoveTick) {
+        const previous = snakeTo;
+        snakeTo = state.body.map((p) => ({ x: p.x, y: p.y }));
+        snakeFrom = snakeTo.map((p, i) => {
+          if (i === 0) return previous[0] ? { ...previous[0] } : { ...p };
+          return previous[Math.min(i - 1, previous.length - 1)]
+            ? { ...previous[Math.min(i - 1, previous.length - 1)] }
+            : { ...p };
+        });
+        snakeMoveTick = state.moveTick;
       }
+      const elapsedTicks = state.tick - state.moveTick + acc / (1000 / 30);
+      const t = Math.max(0, Math.min(1, elapsedTicks / interval));
+      const smooth = t * t * (3 - 2 * t);
+      snakeVisual = snakeTo.map((target, i) => {
+        const from = snakeFrom[i] || target;
+        return {
+          x: from.x + (target.x - from.x) * smooth,
+          y: from.y + (target.y - from.y) * smooth,
+        };
+      });
       state._visualBody = snakeVisual;
     }
     render(c, state, color, settings);
