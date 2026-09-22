@@ -69,31 +69,22 @@ export function generate(seed, rareEvent = 0.08) {
     before = reachable(map, { x: 1, y: 1 }, [exit]).cells;
   const key = before[Math.floor(before.length * 0.65)];
   const secret = before[Math.floor(before.length * 0.85)];
-  const enemies = before
-    .filter(
-      (p, i) =>
-        i > 25 &&
-        i % 37 === 0 &&
-        !(
-          (p.x === key.x && p.y === key.y) ||
-          (p.x === secret.x && p.y === secret.y)
-        ),
-    )
-    .slice(0, 9)
+  // Spawn enemies in distant rooms/corridors, never on top of the player.
+  // This creates a readable "dungeon" opening instead of Pac-Man-like contact spawns.
+  const spawnCells = before.filter((p, i) =>
+    i > 25 &&
+    Math.abs(p.x - 1) + Math.abs(p.y - 1) >= 10 &&
+    Math.abs(p.x - exit.x) + Math.abs(p.y - exit.y) >= 3 &&
+    !((p.x === key.x && p.y === key.y) || (p.x === secret.x && p.y === secret.y))
+  );
+  const enemies = spawnCells
+    .filter((_, i) => i % 37 === 0)
+    .slice(0, 8)
     .map((p, i) => ({
-      ...p,
-      home: { ...p },
-      type: [
-        "chaser",
-        "patrol",
-        "ambusher",
-        "guard",
-        "hunter",
-        "ranged",
-        "boss",
-      ][i % 7],
-      hp: i % 7 === 6 ? 4 : 2,
-      dir: i % 4,
+      ...p, home: { ...p },
+      type: ["chaser","patrol","ambusher","guard","hunter","ranged"][i % 6],
+      hp: i % 5 === 4 ? 3 : 2, dir: i % 4,
+      wake: 22 + i * 9,
     }));
   const keyMode = Math.floor(random(r) * 3);
   if (keyMode === 1)
