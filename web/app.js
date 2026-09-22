@@ -132,16 +132,25 @@ async function navigate(next = "games") {
   }
 }
 function hub() {
-  $("#page").innerHTML =
-    `${data.active ? `<div class="notice row"><span>СОХРАНЁННЫЙ ЗАБЕГ · ${esc(data.active.game).toUpperCase()}</span><button id="resume" class="small">ПРОДОЛЖИТЬ</button><button id="abandon" class="small">ЗАВЕРШИТЬ</button></div>` : ""}<section class="console-home"><div class="console-home-head"><div><div class="eyebrow">SELECT GAME / PLAYER 01</div><h1>Выбери игру</h1></div><div class="home-wallet"><b>● ${data.user.coins||0}</b><span>МОНЕТЫ</span></div></div><div class="game-selector">${data.games.map((g,i)=>`<button class="game-tile" data-play="${g.id}" ${g.enabled?"":"disabled"} style="--accent:${g.color}"><canvas data-preview="${g.id}"></canvas><span class="game-number">0${i+1}</span><div><small>${g.tag}</small><strong>${g.name}</strong><em>${g.id==="platformer"?"LEVEL "+Math.min(9,data.user.progress)+"/9":"BEST "+(data.user.stats["best-"+g.id]||0)}</em></div><i>▶</i></button>`).join("")}</div><div class="console-actions"><button class="console-action daily-action" data-play="maze" data-daily="true"><b>DAILY</b><span>НОВЫЙ ЛАБИРИНТ</span><i>↗</i></button><button class="console-action" id="home-cases"><b>КЕЙСЫ</b><span>${boxes()} В ИНВЕНТАРЕ</span><i>▣</i></button><button class="console-action" id="home-skins"><b>СКИНЫ</b><span>${data.owned.length} ОТКРЫТО</span><i>◆</i></button></div></section>`;
+  const order=["snake","platformer","racer","tanks","maze","merge2048"], labels={snake:"SNAKE",platformer:"PLATFORMER",racer:"RACING",tanks:"TANKS",maze:"MAZE",merge2048:"2048"};
+  const cards=order.map(id=>data.games.find(g=>g.id===id)).filter(Boolean);
+  $("#page").innerHTML=`${data.active ? `<div class="notice row"><span>СОХРАНЁННЫЙ ЗАБЕГ · ${esc(data.active.game).toUpperCase()}</span><button id="resume" class="small">ПРОДОЛЖИТЬ</button><button id="abandon" class="small">ЗАВЕРШИТЬ</button></div>` : ""}
+  <section class="pixel-home">
+    <header class="pixel-status"><button class="player-card" id="profile-card"><span class="pixel-avatar">👾</span><span><b>${esc(data.user.name)}</b><small>★ LV. ${data.user.level}</small></span><i><u style="width:${Math.min(100,(data.user.xp%250)/2.5)}%"></u></i></button><div class="pixel-wallet">🪙 <b>${data.user.coins||0}</b></div><button class="pixel-gear" id="home-settings">⚙</button></header>
+    <div class="arcade-title"><span>♛</span><h1><b>RETRO</b><strong>ARCADE</strong></h1><p>PLAY <i>▶</i> COLLECT <i>▶</i> COMPETE</p></div>
+    <div class="arcade-room">
+      <aside class="room-left"><div class="neon-sign">GOOD<br>GAMES<br>GOOD<br>PEOPLE</div><div class="cabinet-sign">INSERT<br>COIN</div></aside>
+      <div class="pixel-grid">${cards.map((g,i)=>`<button class="pixel-game g-${g.id}" data-play="${g.id}" ${g.enabled?"":"disabled"}><b>${labels[g.id]||g.name}</b><canvas data-preview="${g.id}"></canvas><small>${g.id==="platformer"?"LV "+Math.min(9,data.user.progress):"BEST "+(data.user.stats["best-"+g.id]||0)}</small></button>`).join("")}</div>
+      <aside class="room-right"><button id="side-cases">▣<span>INVENTORY</span></button><button data-side="leaderboard">♜<span>ACHIEVEMENTS</span></button><button id="side-skins">▥<span>SHOP</span></button><button data-side="challenges">▤<span>DAILY TASKS</span></button></aside>
+    </div>
+    <button class="lootbox-banner" id="loot-banner"><span class="loot-chest">▣</span><span><b>RANDOM LOOTBOX</b><small>New skins. New surprises.</small></span><i>›</i></button>
+    <div class="room-floor"><span>OLD GAMES<br>NEW FRIENDS</span><i>STAY<br>RETRO ♛</i></div>
+  </section>`;
   document.querySelectorAll("[data-preview]").forEach(c=>preview(c,c.dataset.preview));
-  bind("[data-play]",el=>{const g=el.dataset.play;if(["racer","tanks"].includes(g)){multiplayerChoice(g);return;}return start(g,1,el.dataset.daily==="true")});
-  $("#home-cases").onclick=()=>navigate("cases");
-  $("#home-skins").onclick=()=>navigate("collection");
-  if(data.active){
-    $("#resume").onclick=()=>launch(data.active);
-    bind("#abandon",async()=>{const r=await api("/session/sync",{id:data.active.id,version:data.active.version,inputs:[],finish:true});if(r.conflict)throw Error("Забег изменился. Обнови страницу");await refresh();hub()});
-  }
+  bind("[data-play]",el=>{const g=el.dataset.play;if(["racer","tanks"].includes(g)){multiplayerChoice(g);return;}return start(g,1,false)});
+  $("#profile-card").onclick=()=>navigate("profile");$("#home-settings").onclick=()=>navigate("settings");$("#side-cases").onclick=$("#loot-banner").onclick=()=>navigate("cases");$("#side-skins").onclick=()=>navigate("collection");
+  bind("[data-side]",el=>navigate(el.dataset.side));
+  if(data.active){$("#resume").onclick=()=>launch(data.active);bind("#abandon",async()=>{const r=await api("/session/sync",{id:data.active.id,version:data.active.version,inputs:[],finish:true});if(r.conflict)throw Error("Забег изменился. Обнови страницу");await refresh();hub()})}
 }
 const boxes = () =>
   data.inventory.find((x) => x.item === "arcade")?.quantity || 0;
