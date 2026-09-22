@@ -135,7 +135,7 @@ function hub() {
   const order=["snake","platformer","racer","tanks","maze","merge2048"], labels={snake:"SNAKE",platformer:"PLATFORMER",racer:"RACING",tanks:"TANKS",maze:"MAZE",merge2048:"2048"};
   const cards=order.map(id=>data.games.find(g=>g.id===id)).filter(Boolean);
   $("#page").innerHTML=`${data.active ? `<div class="notice row"><span>СОХРАНЁННЫЙ ЗАБЕГ · ${esc(data.active.game).toUpperCase()}</span><button id="resume" class="small">ПРОДОЛЖИТЬ</button><button id="abandon" class="small">ЗАВЕРШИТЬ</button></div>` : ""}
-  <section class="pixel-home">
+  <section class="pixel-home"><div class="pixel-room-art" aria-hidden="true"></div>
     <header class="pixel-status"><button class="player-card" id="profile-card"><span class="pixel-avatar">👾</span><span><b>${esc(data.user.name)}</b><small>★ LV. ${data.user.level}</small></span><i><u style="width:${Math.min(100,(data.user.xp%250)/2.5)}%"></u></i></button><div class="pixel-wallet">🪙 <b>${data.user.coins||0}</b></div><button class="pixel-gear" id="home-settings">⚙</button></header>
     <div class="arcade-title"><span>♛</span><h1><b>RETRO</b><strong>ARCADE</strong></h1><p>PLAY <i>▶</i> COLLECT <i>▶</i> COMPETE</p></div>
     <div class="arcade-room">
