@@ -32,6 +32,10 @@ export function validateCatalog(value) {
             item.rarity,
           ) ||
           !/^#[0-9a-f]{6}$/i.test(item.color) ||
+          (item.theme !== undefined && (typeof item.theme !== "string" || item.theme.length > 32)) ||
+          (item.background !== undefined && !/^#[0-9a-f]{6}$/i.test(item.background)) ||
+          (item.enemy !== undefined && !/^#[0-9a-f]{6}$/i.test(item.enemy)) ||
+          (item.terrain !== undefined && !/^#[0-9a-f]{6}$/i.test(item.terrain)) ||
           !Number.isInteger(item.cost) ||
           item.cost < 0 ||
           item.cost > 100000
