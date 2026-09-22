@@ -28,7 +28,8 @@ export function play(session, api, settings, skin, onExit, onResult, toast) {
     snakeMoveTick = null,
     keys = new Set(),
     touch = new Map(),
-    swipe = 0;
+    swipe = 0,
+    tapQueue = 0;
   const keyMap = {
     ArrowUp: 1,
     KeyW: 1,
@@ -79,7 +80,11 @@ export function play(session, api, settings, skin, onExit, onResult, toast) {
     b.onpointerdown = (e) => {
       e.preventDefault();
       b.setPointerCapture(e.pointerId);
-      touch.set(e.pointerId, Number(b.dataset.key));
+      const value = Number(b.dataset.key);
+      touch.set(e.pointerId, value);
+      // Queue a short tap as well: a press/release between two 30 Hz ticks
+      // must still reach the game (common on Telegram/iOS WebView).
+      tapQueue |= value;
       b.classList.add("pressed");
     };
     b.onpointerup = b.onpointercancel = b.onlostpointercapture = release;
@@ -91,6 +96,7 @@ export function play(session, api, settings, skin, onExit, onResult, toast) {
     start = { x: e.clientX, y: e.clientY };
     canvas.setPointerCapture(e.pointerId);
   };
+  canvas.onpointercancel = () => { start = null; };
   canvas.onpointerup = (e) => {
     if (!start) return;
     const dx = e.clientX - start.x,
@@ -179,10 +185,11 @@ export function play(session, api, settings, skin, onExit, onResult, toast) {
     if (!paused && !state.over) {
       acc += delta;
       while (acc >= 1000 / 30) {
-        const input = [...keys, ...touch.values(), swipe].reduce(
+        const input = [...keys, ...touch.values(), swipe, tapQueue].reduce(
           (a, b) => a | b,
           0,
         );
+        tapQueue = 0;
         const score = state.score,
           hp = state.hp;
         tick(state, input);
