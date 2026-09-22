@@ -116,39 +116,28 @@ export function render(c, s, color = "#bdff70", settings = {}, skin = {}) {
       c.fillStyle=`hsl(${h} 55% ${v?38:16}%)`;c.beginPath();c.roundRect(X,Y,cell,cell,12);c.fill();if(v){c.fillStyle="#fff";c.font=`bold ${cell*(v>=1024?.25:.34)}px monospace`;c.textAlign="center";c.textBaseline="middle";c.fillText(v,X+cell/2,Y+cell/2)}
     }
   } else if (s.game === "snake") {
-    // Lush garden arena: layered hedge border instead of hard arcade bricks.
-    const leaf=(x,y,r,hue=108)=>{c.fillStyle=`hsl(${hue} 48% 27%)`;c.beginPath();c.ellipse(x,y,r,r*.62,-.45,0,Math.PI*2);c.fill();c.fillStyle="#ffffff16";c.beginPath();c.ellipse(x-r*.18,y-r*.18,r*.35,r*.16,-.45,0,Math.PI*2);c.fill()};
-    for(let y=0;y<18;y++)for(let x=0;x<24;x++){
-      if(!x||!y||x===23||y===17){
-        const X=(x+.5)*z,Y=(y+.5)*z;
-        c.fillStyle="#10291b";c.fillRect(x*z,y*z,z,z);
-        leaf(X-z*.16,Y+z*.08,z*.42,104);leaf(X+z*.2,Y-z*.08,z*.38,116);
-        if((x*7+y*11)%9===0){c.fillStyle="#d9d0a0";c.beginPath();c.arc(X,Y,z*.09,0,Math.PI*2);c.fill()}
-      } else {
-        c.fillStyle=(x+y)%2?"#10281f":"#132d23";c.fillRect(x*z,y*z,z,z);
-        if((x*13+y*17)%37===0){c.fillStyle="#315a32";c.fillRect(x*z+z*.45,y*z+z*.55,z*.08,z*.22)}
-      }
-    }
-    for(const p of s.moving||[]) tile(c,p.x*z,p.y*z,z,"#8b7655",1);
+    const leaf=(x,y,r,rot=0,col="#3f8f32")=>{c.save();c.translate(x,y);c.rotate(rot);const g=c.createLinearGradient(-r,-r,r,r);g.addColorStop(0,"#75c84d");g.addColorStop(.45,col);g.addColorStop(1,"#174d27");c.fillStyle=g;c.beginPath();c.ellipse(0,0,r,r*.48,0,0,Math.PI*2);c.fill();c.strokeStyle="#a7dc6b44";c.lineWidth=Math.max(1,r*.07);c.beginPath();c.moveTo(-r*.65,0);c.lineTo(r*.65,0);c.stroke();c.restore()};
+    // Deep garden floor.
+    for(let y=0;y<18;y++)for(let x=0;x<24;x++){c.fillStyle=(x+y)%2?"#0c271d":"#103024";c.fillRect(x*z,y*z,z,z);if(x&&y&&x<23&&y<17&&(x*17+y*29)%53===0){c.fillStyle="#4c8a38";c.fillRect(x*z+z*.46,y*z+z*.58,z*.07,z*.2)}}
+    // Dense, irregular hedge: overlapping leaves, stones and occasional flowers.
+    const hedge=[];
+    for(let x=0;x<24;x++){hedge.push([x+.15,.25],[x+.62,.55],[x+.35,17.62],[x+.82,17.28])}
+    for(let y=1;y<17;y++){hedge.push([.22,y+.12],[.62,y+.62],[23.72,y+.25],[23.34,y+.7])}
+    hedge.forEach((p,i)=>leaf(p[0]*z,p[1]*z,z*(.38+(i%3)*.035),(i%5-2)*.28,i%4?"#3d9236":"#28762f"));
+    for(let i=0;i<16;i++){const edge=i%4,X=edge<2?(1+(i*7)%22)*z:(edge===2?.55:23.45)*z,Y=edge<2?(edge?.55:17.45)*z:(1+(i*5)%16)*z;c.fillStyle="#706f58";c.beginPath();c.ellipse(X,Y,z*.18,z*.13,-.3,0,Math.PI*2);c.fill();if(i%5===0){c.fillStyle="#f3e9c0";for(let a=0;a<5;a++){const q=a*Math.PI*2/5;c.beginPath();c.arc(X+Math.cos(q)*z*.12,Y+Math.sin(q)*z*.12,z*.055,0,Math.PI*2);c.fill()}c.fillStyle="#e3b54f";c.beginPath();c.arc(X,Y,z*.05,0,Math.PI*2);c.fill()}}
+    for(const p of s.moving||[]){c.fillStyle="#77715c";c.beginPath();c.ellipse((p.x+.5)*z,(p.y+.58)*z,z*.34,z*.24,0,0,Math.PI*2);c.fill()}
     if(s.bonus) gem(c,s.bonus.x*z,s.bonus.y*z,z*.8,"#c69eff");
-    for(const p of s.walls){const X=(p.x+.5)*z,Y=(p.y+.5)*z;leaf(X-z*.12,Y,z*.38,108);leaf(X+z*.16,Y-z*.08,z*.34,118)}
-    const snakeBody=s._visualBody||s.body;
-    if(snakeBody.length){
-      c.save();c.lineCap="round";c.lineJoin="round";c.shadowColor="#73ff5a";c.shadowBlur=z*.22;
-      const bodyGrad=c.createLinearGradient(0,0,0,z*18);bodyGrad.addColorStop(0,"#83d94e");bodyGrad.addColorStop(1,"#3f8d35");
-      c.strokeStyle=bodyGrad;c.lineWidth=z*.62;c.beginPath();
-      snakeBody.forEach((p,i)=>{const X=(p.x+.5)*z,Y=(p.y+.5)*z;i?c.lineTo(X,Y):c.moveTo(X,Y)});c.stroke();
-      c.shadowBlur=0;c.strokeStyle="#d8ff9d66";c.lineWidth=z*.12;c.stroke();c.restore();
-      // Soft scale plates make the body read as an actual snake, not a neon tube.
-      for(let i=2;i<snakeBody.length;i+=2){const p=snakeBody[i];c.fillStyle="#b7e87555";c.beginPath();c.ellipse((p.x+.5)*z,(p.y+.5)*z,z*.13,z*.09,0,0,Math.PI*2);c.fill()}
-      const head=snakeBody[0],[dx,dy]=directionsForRender(s.dir),px=-dy,py=dx,hx=(head.x+.5)*z,hy=(head.y+.5)*z;
-      c.save();c.translate(hx+dx*z*.08,hy+dy*z*.08);c.rotate(Math.atan2(dy,dx));c.shadowColor="#70ff55";c.shadowBlur=z*.25;
-      const hg=c.createLinearGradient(-z*.4,-z*.3,z*.4,z*.3);hg.addColorStop(0,"#b6ef62");hg.addColorStop(1,"#55a83d");c.fillStyle=hg;c.beginPath();c.ellipse(0,0,z*.43,z*.34,0,0,Math.PI*2);c.fill();c.restore();
-      for(const side of[-1,1]){const ex=hx+dx*z*.2+px*z*.15*side,ey=hy+dy*z*.2+py*z*.15*side;c.fillStyle="#eef8c7";c.beginPath();c.arc(ex,ey,z*.085,0,Math.PI*2);c.fill();c.fillStyle="#101810";c.beginPath();c.arc(ex+dx*z*.025,ey+dy*z*.025,z*.04,0,Math.PI*2);c.fill()}
-      // Tiny tongue flick.
-      if(s.tick%45<9){c.strokeStyle="#ff5d6f";c.lineWidth=Math.max(1,z*.035);c.beginPath();c.moveTo(hx+dx*z*.43,hy+dy*z*.43);c.lineTo(hx+dx*z*.62,hy+dy*z*.62);c.stroke()}
+    for(const p of s.walls){for(let i=0;i<4;i++)leaf((p.x+.5+(i%2-.5)*.35)*z,(p.y+.5+(i>1?.18:-.18))*z,z*.3,(i-2)*.4)}
+    const body=s._visualBody||s.body;
+    if(body.length){
+      // Individual overlapping scales create the segmented 32-bit look from the target.
+      for(let i=body.length-1;i>=1;i--){const p=body[i],q=body[Math.max(0,i-1)],ang=Math.atan2(q.y-p.y,q.x-p.x),X=(p.x+.5)*z,Y=(p.y+.5)*z;c.save();c.translate(X,Y);c.rotate(ang);c.shadowColor="#6dff4f";c.shadowBlur=z*.12;const g=c.createRadialGradient(-z*.1,-z*.12,z*.03,0,0,z*.38);g.addColorStop(0,"#a9ef66");g.addColorStop(.48,"#63bb43");g.addColorStop(1,"#2f742f");c.fillStyle=g;c.beginPath();c.ellipse(0,0,z*.37,z*.31,0,0,Math.PI*2);c.fill();c.strokeStyle="#d7ff9b38";c.lineWidth=z*.035;c.stroke();c.restore()}
+      const h=body[0],[dx,dy]=directionsForRender(s.dir),px=-dy,py=dx,hx=(h.x+.5)*z,hy=(h.y+.5)*z,ang=Math.atan2(dy,dx);
+      c.save();c.translate(hx+dx*z*.07,hy+dy*z*.07);c.rotate(ang);c.shadowColor="#77ff52";c.shadowBlur=z*.2;const hg=c.createLinearGradient(-z*.4,-z*.3,z*.42,z*.3);hg.addColorStop(0,"#b9f16b");hg.addColorStop(.55,"#67bd43");hg.addColorStop(1,"#34762f");c.fillStyle=hg;c.beginPath();c.ellipse(0,0,z*.46,z*.36,0,0,Math.PI*2);c.fill();c.restore();
+      for(const side of[-1,1]){const ex=hx+dx*z*.2+px*z*.17*side,ey=hy+dy*z*.2+py*z*.17*side;c.fillStyle="#f5f3cf";c.beginPath();c.arc(ex,ey,z*.09,0,Math.PI*2);c.fill();c.fillStyle="#10170d";c.beginPath();c.arc(ex+dx*z*.028,ey+dy*z*.028,z*.044,0,Math.PI*2);c.fill()}
+      if(s.tick%42<8){const tx=hx+dx*z*.48,ty=hy+dy*z*.48;c.strokeStyle="#ef405d";c.lineWidth=Math.max(1,z*.035);c.beginPath();c.moveTo(tx,ty);c.lineTo(tx+dx*z*.18,ty+dy*z*.18);c.moveTo(tx+dx*z*.16,ty+dy*z*.16);c.lineTo(tx+dx*z*.22+px*z*.07,ty+dy*z*.22+py*z*.07);c.stroke()}
     }
-    if(s.food){const X=(s.food.x+.5)*z,Y=(s.food.y+.5)*z;c.save();c.shadowColor="#ff5e64";c.shadowBlur=z*.28;c.fillStyle=s.rare?"#ffd56a":"#e94f55";c.beginPath();c.arc(X,Y,z*.22,0,Math.PI*2);c.fill();c.shadowBlur=0;c.strokeStyle="#6c3d27";c.lineWidth=Math.max(1,z*.045);c.beginPath();c.moveTo(X,Y-z*.2);c.lineTo(X+z*.05,Y-z*.34);c.stroke();leaf(X+z*.12,Y-z*.3,z*.12,112);c.restore()}
+    if(s.food){const X=(s.food.x+.5)*z,Y=(s.food.y+.5)*z;c.save();c.shadowColor="#ff5b58";c.shadowBlur=z*.3;const ag=c.createRadialGradient(X-z*.08,Y-z*.1,z*.02,X,Y,z*.25);ag.addColorStop(0,"#ff9a73");ag.addColorStop(.35,s.rare?"#ffd45e":"#f34f4f");ag.addColorStop(1,s.rare?"#b98422":"#a51f2b");c.fillStyle=ag;c.beginPath();c.arc(X,Y,z*.23,0,Math.PI*2);c.fill();c.shadowBlur=0;c.strokeStyle="#704329";c.lineWidth=z*.045;c.beginPath();c.moveTo(X,Y-z*.19);c.lineTo(X+z*.04,Y-z*.34);c.stroke();leaf(X+z*.12,Y-z*.31,z*.12,-.5,"#4d9a37");c.restore()}
   }
   if (s.game === "maze") {
     for (let y = 0; y < s.height; y++)
