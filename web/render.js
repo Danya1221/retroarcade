@@ -116,63 +116,39 @@ export function render(c, s, color = "#bdff70", settings = {}, skin = {}) {
       c.fillStyle=`hsl(${h} 55% ${v?38:16}%)`;c.beginPath();c.roundRect(X,Y,cell,cell,12);c.fill();if(v){c.fillStyle="#fff";c.font=`bold ${cell*(v>=1024?.25:.34)}px monospace`;c.textAlign="center";c.textBaseline="middle";c.fillText(v,X+cell/2,Y+cell/2)}
     }
   } else if (s.game === "snake") {
-    for (let y = 0; y < 18; y++)
-      for (let x = 0; x < 24; x++) {
-        if (!x || !y || x === 23 || y === 17)
-          tile(c, x * z, y * z, z, skin.terrain || "#304334");
-        else if ((x + y) % 2 === 0) rect(c, x * z, y * z, z, z, "#ffffff03");
-      }
-    for (const p of s.moving || []) tile(c, p.x * z, p.y * z, z, "#ffb578", 1);
-    if (s.bonus) gem(c, s.bonus.x * z, s.bonus.y * z, z * 0.8, "#c69eff");
-    for (const p of s.walls) tile(c, p.x * z, p.y * z, z, "#74566f", 1);
-    const snakeBody = s._visualBody || s.body;
-    if (snakeBody.length) {
-      c.save();
-      c.lineCap = "round";
-      c.lineJoin = "round";
-      c.shadowColor = color;
-      c.shadowBlur = z * .45;
-      c.strokeStyle = skin.terrain || "#649842";
-      c.lineWidth = z * .68;
-      c.beginPath();
-      // Start the tube under the head, then continue through every body segment.
-      // This keeps the head visually attached while the interpolated snake turns.
-      snakeBody.forEach((p, i) => {
-        const x = (p.x + .5) * z, y = (p.y + .5) * z;
-        if (!i) c.moveTo(x, y); else c.lineTo(x, y);
-      });
-      c.stroke();
-      c.shadowBlur = 0;
-      c.strokeStyle = "#ffffff25";
-      c.lineWidth = Math.max(2, z * .10);
-      c.stroke();
-      c.restore();
-      const head = snakeBody[0];
-      const hx = (head.x + .5) * z, hy = (head.y + .5) * z;
-      const [dx, dy] = directionsForRender(s.dir);
-      c.save();
-      c.shadowColor = color; c.shadowBlur = z * .55;
-      c.fillStyle = color;
-      c.beginPath();
-      c.ellipse(hx + dx * z * .08, hy + dy * z * .08, z * .42, z * .36, Math.atan2(dy, dx), 0, Math.PI * 2);
-      c.fill();
-      c.restore();
-      const px = -dy, py = dx;
-      for (const side of [-1, 1]) {
-        c.fillStyle = "#102014";
-        c.beginPath();
-        c.arc(hx + dx*z*.15 + px*z*.14*side, hy + dy*z*.15 + py*z*.14*side, Math.max(2,z*.055), 0, Math.PI*2);
-        c.fill();
+    // Lush garden arena: layered hedge border instead of hard arcade bricks.
+    const leaf=(x,y,r,hue=108)=>{c.fillStyle=`hsl(${hue} 48% 27%)`;c.beginPath();c.ellipse(x,y,r,r*.62,-.45,0,Math.PI*2);c.fill();c.fillStyle="#ffffff16";c.beginPath();c.ellipse(x-r*.18,y-r*.18,r*.35,r*.16,-.45,0,Math.PI*2);c.fill()};
+    for(let y=0;y<18;y++)for(let x=0;x<24;x++){
+      if(!x||!y||x===23||y===17){
+        const X=(x+.5)*z,Y=(y+.5)*z;
+        c.fillStyle="#10291b";c.fillRect(x*z,y*z,z,z);
+        leaf(X-z*.16,Y+z*.08,z*.42,104);leaf(X+z*.2,Y-z*.08,z*.38,116);
+        if((x*7+y*11)%9===0){c.fillStyle="#d9d0a0";c.beginPath();c.arc(X,Y,z*.09,0,Math.PI*2);c.fill()}
+      } else {
+        c.fillStyle=(x+y)%2?"#10281f":"#132d23";c.fillRect(x*z,y*z,z,z);
+        if((x*13+y*17)%37===0){c.fillStyle="#315a32";c.fillRect(x*z+z*.45,y*z+z*.55,z*.08,z*.22)}
       }
     }
-    if (s.food)
-      gem(
-        c,
-        s.food.x * z + z * 0.2,
-        s.food.y * z + z * 0.2,
-        z * 0.6,
-        s.rare ? "#ffd780" : "#ff839b",
-      );
+    for(const p of s.moving||[]) tile(c,p.x*z,p.y*z,z,"#8b7655",1);
+    if(s.bonus) gem(c,s.bonus.x*z,s.bonus.y*z,z*.8,"#c69eff");
+    for(const p of s.walls){const X=(p.x+.5)*z,Y=(p.y+.5)*z;leaf(X-z*.12,Y,z*.38,108);leaf(X+z*.16,Y-z*.08,z*.34,118)}
+    const snakeBody=s._visualBody||s.body;
+    if(snakeBody.length){
+      c.save();c.lineCap="round";c.lineJoin="round";c.shadowColor="#73ff5a";c.shadowBlur=z*.22;
+      const bodyGrad=c.createLinearGradient(0,0,0,z*18);bodyGrad.addColorStop(0,"#83d94e");bodyGrad.addColorStop(1,"#3f8d35");
+      c.strokeStyle=bodyGrad;c.lineWidth=z*.62;c.beginPath();
+      snakeBody.forEach((p,i)=>{const X=(p.x+.5)*z,Y=(p.y+.5)*z;i?c.lineTo(X,Y):c.moveTo(X,Y)});c.stroke();
+      c.shadowBlur=0;c.strokeStyle="#d8ff9d66";c.lineWidth=z*.12;c.stroke();c.restore();
+      // Soft scale plates make the body read as an actual snake, not a neon tube.
+      for(let i=2;i<snakeBody.length;i+=2){const p=snakeBody[i];c.fillStyle="#b7e87555";c.beginPath();c.ellipse((p.x+.5)*z,(p.y+.5)*z,z*.13,z*.09,0,0,Math.PI*2);c.fill()}
+      const head=snakeBody[0],[dx,dy]=directionsForRender(s.dir),px=-dy,py=dx,hx=(head.x+.5)*z,hy=(head.y+.5)*z;
+      c.save();c.translate(hx+dx*z*.08,hy+dy*z*.08);c.rotate(Math.atan2(dy,dx));c.shadowColor="#70ff55";c.shadowBlur=z*.25;
+      const hg=c.createLinearGradient(-z*.4,-z*.3,z*.4,z*.3);hg.addColorStop(0,"#b6ef62");hg.addColorStop(1,"#55a83d");c.fillStyle=hg;c.beginPath();c.ellipse(0,0,z*.43,z*.34,0,0,Math.PI*2);c.fill();c.restore();
+      for(const side of[-1,1]){const ex=hx+dx*z*.2+px*z*.15*side,ey=hy+dy*z*.2+py*z*.15*side;c.fillStyle="#eef8c7";c.beginPath();c.arc(ex,ey,z*.085,0,Math.PI*2);c.fill();c.fillStyle="#101810";c.beginPath();c.arc(ex+dx*z*.025,ey+dy*z*.025,z*.04,0,Math.PI*2);c.fill()}
+      // Tiny tongue flick.
+      if(s.tick%45<9){c.strokeStyle="#ff5d6f";c.lineWidth=Math.max(1,z*.035);c.beginPath();c.moveTo(hx+dx*z*.43,hy+dy*z*.43);c.lineTo(hx+dx*z*.62,hy+dy*z*.62);c.stroke()}
+    }
+    if(s.food){const X=(s.food.x+.5)*z,Y=(s.food.y+.5)*z;c.save();c.shadowColor="#ff5e64";c.shadowBlur=z*.28;c.fillStyle=s.rare?"#ffd56a":"#e94f55";c.beginPath();c.arc(X,Y,z*.22,0,Math.PI*2);c.fill();c.shadowBlur=0;c.strokeStyle="#6c3d27";c.lineWidth=Math.max(1,z*.045);c.beginPath();c.moveTo(X,Y-z*.2);c.lineTo(X+z*.05,Y-z*.34);c.stroke();leaf(X+z*.12,Y-z*.3,z*.12,112);c.restore()}
   }
   if (s.game === "maze") {
     for (let y = 0; y < s.height; y++)
