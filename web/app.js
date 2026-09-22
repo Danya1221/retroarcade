@@ -135,7 +135,7 @@ function hub() {
   $("#page").innerHTML =
     `${data.active ? `<div class="notice row"><span>СОХРАНЁННЫЙ ЗАБЕГ · ${esc(data.active.game).toUpperCase()}</span><button id="resume" class="small">ПРОДОЛЖИТЬ</button><button id="abandon" class="small">ЗАВЕРШИТЬ</button></div>` : ""}<section class="console-home"><div class="console-home-head"><div><div class="eyebrow">SELECT GAME / PLAYER 01</div><h1>Выбери игру</h1></div><div class="home-wallet"><b>● ${data.user.coins||0}</b><span>МОНЕТЫ</span></div></div><div class="game-selector">${data.games.map((g,i)=>`<button class="game-tile" data-play="${g.id}" ${g.enabled?"":"disabled"} style="--accent:${g.color}"><canvas data-preview="${g.id}"></canvas><span class="game-number">0${i+1}</span><div><small>${g.tag}</small><strong>${g.name}</strong><em>${g.id==="platformer"?"LEVEL "+Math.min(9,data.user.progress)+"/9":"BEST "+(data.user.stats["best-"+g.id]||0)}</em></div><i>▶</i></button>`).join("")}</div><div class="console-actions"><button class="console-action daily-action" data-play="maze" data-daily="true"><b>DAILY</b><span>НОВЫЙ ЛАБИРИНТ</span><i>↗</i></button><button class="console-action" id="home-cases"><b>КЕЙСЫ</b><span>${boxes()} В ИНВЕНТАРЕ</span><i>▣</i></button><button class="console-action" id="home-skins"><b>СКИНЫ</b><span>${data.owned.length} ОТКРЫТО</span><i>◆</i></button></div></section>`;
   document.querySelectorAll("[data-preview]").forEach(c=>preview(c,c.dataset.preview));
-  bind("[data-play]",el=>start(el.dataset.play,1,el.dataset.daily==="true"));
+  bind("[data-play]",el=>{const g=el.dataset.play;if(["racer","tanks"].includes(g)){multiplayerChoice(g);return;}return start(g,1,el.dataset.daily==="true")});
   $("#home-cases").onclick=()=>navigate("cases");
   $("#home-skins").onclick=()=>navigate("collection");
   if(data.active){
@@ -155,6 +155,23 @@ async function start(game, level = 1, daily = false) {
     return;
   }
   await launch(await api("/session/start", { game, level, daily }));
+}
+function multiplayerChoice(game){
+  const d=modal(`<div class="eyebrow">MULTIPLAYER / ${game.toUpperCase()}</div><h2>${game==="racer"?"Turbo Formula":"Steel Arena"}</h2><div class="stack"><button id="solo" class="primary">SOLO / БОТЫ</button><button id="create-online">ONLINE · СОЗДАТЬ</button><button id="create-mixed">ONLINE + BOTS</button><label>КОД КОМНАТЫ<input id="room-code" maxlength="6" placeholder="A1B2C3" autocomplete="off"></label><button id="join-room">ВОЙТИ ПО КОДУ</button></div><div class="actions"><button id="mp-close">Назад</button></div>`);
+  $("#mp-close").onclick=()=>d.close(); $("#solo").onclick=()=>{d.close();start(game)};
+  $("#create-online").onclick=()=>createRoom(game,"online",d); $("#create-mixed").onclick=()=>createRoom(game,"mixed",d);
+  $("#join-room").onclick=async()=>{const r=await api("/multiplayer/join",{code:$("#room-code").value});showRoom(r.room||r,false,d)};
+}
+async function createRoom(game,mode,d){const r=await api("/multiplayer/create",{game,mode,maxPlayers:4});showRoom(r,true,d)}
+async function showRoom(room,host,d){
+  let timer; const render=async()=>{
+    const x=await api("/multiplayer/room?id="+room.id), me=x.players.find(p=>String(p.user_id)===String(data.user.id));
+    d.innerHTML=`<div class="eyebrow">ONLINE LOBBY · ${x.room.game.toUpperCase()}</div><h2>КОМНАТА <span class="mono">${x.room.code}</span></h2><p class="muted">${x.room.mode==="mixed"?"ONLINE + BOTS":"ONLINE"} · ${x.players.length}/${x.room.max_players} ИГРОКОВ${x.botSlots?" · "+x.botSlots+" БОТОВ":""}</p><div class="stack">${x.players.map(p=>`<div class="panel row"><b>#${Number(p.slot)+1} ${esc(p.name)}</b><span>${p.ready||String(p.user_id)===String(x.room.host_id)?"READY":"WAITING"}</span></div>`).join("")}</div><div class="actions">${String(x.room.host_id)===String(data.user.id)?'<button id="room-start" class="primary">START</button>':`<button id="room-ready" class="primary">${me?.ready?"NOT READY":"READY"}</button>`}<button id="room-close">В меню</button></div>`;
+    $("#room-close").onclick=()=>{clearInterval(timer);d.close()};
+    if($("#room-ready"))$("#room-ready").onclick=async()=>{await api("/multiplayer/ready",{id:x.room.id,ready:!me?.ready});await render()};
+    if($("#room-start"))$("#room-start").onclick=async()=>{await api("/multiplayer/start",{id:x.room.id});await render()};
+    if(x.room.status==="playing"){clearInterval(timer);d.close();toast("Матч запущен · синхронизация ONLINE");await start(x.room.game)}
+  }; await render(); timer=setInterval(()=>render().catch(()=>{}),1500);
 }
 function levelSelect() {
   const d = modal(
