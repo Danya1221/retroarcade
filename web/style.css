@@ -1104,3 +1104,16 @@ button.primary{box-shadow:0 0 28px var(--glow),inset 0 1px #fff8}
  .play-shell.is-mobile .action-symbol{font-size:18px}.play-shell.is-mobile .action span{font-size:17px}
  .play-shell.is-mobile .control-strip{grid-template-columns:1.45fr 1fr;white-space:normal;gap:8px 12px;padding:11px 12px;font-size:8px}
 }
+
+/* Match approved reference density on phone */
+@media(max-width:600px){
+ .play-shell.is-mobile{padding:6px 16px 12px}
+ .play-shell.is-mobile .play-top{height:66px;min-height:66px;grid-template-columns:1fr .78fr 1fr}
+ .play-shell.is-mobile .play-top button{height:50px;min-height:50px}
+ .play-shell.is-mobile .play-stage{aspect-ratio:1.18!important}
+ .play-shell.is-mobile .controls{grid-template-columns:44% 56%;gap:17px;padding-top:12px}
+ .play-shell.is-mobile .dpad{width:100%;max-width:210px;padding:8px;border-radius:24px}
+ .play-shell.is-mobile .action-buttons{justify-content:center;gap:14px}
+ .play-shell.is-mobile .action{width:min(22vw,112px)!important;height:min(22vw,112px)!important}
+ .play-shell.is-mobile .control-strip{margin-top:4px;padding:9px 12px}
+}
