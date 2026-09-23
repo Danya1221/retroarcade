@@ -97,14 +97,22 @@ function equippedSkin(game) {
 async function refresh() {
   data = await api("/me");
 }
-function shell() {
+function playerBar() {
   const u = data.user;
-  const bottom = [["games","HOME","nav-home"],["collection","SKINS","nav-skins"],["leaderboard","SCORES","nav-score"],["cases","CASES","nav-games"],["profile","PROFILE","nav-profile"]];
-  $("#app").innerHTML =
-    `<div class="layout arcade-shell"><aside class="sidebar console-rail"><div class="brand"><span class="brand-mark">R</span><span>RETRO<br>ARCADE<span style="color:var(--green)">.</span></span></div><nav>${Object.entries(names)
-      .filter(([k]) => k !== "admin" || u.admin)
-      .map(([k,n],i)=>`<button data-nav="${k}" class="${view===k?"active":""}"><b>${String(i+1).padStart(2,"0")}</b>${n}</button>`).join("")}</nav><div class="sidebar-foot"><span class="online-dot"></span>SYSTEM ONLINE<br>RETRO ARCADE / V.01</div></aside><main class="main console-main"><header class="topbar console-topbar"><span class="breadcrumbs">ARCADE / ${names[view]||"GAMES"}</span><div class="user-pill"><span class="wallet-coin">COIN ${u.coins||0}</span><div class="avatar">${esc(u.name.slice(0,2).toUpperCase())}</div><div>${esc(u.name)} <span class="muted">LVL ${u.level}</span><div class="xp-line"><i style="width:${Math.min(100,(u.xp%250)/2.5)}%"></i></div></div></div></header><div class="console-screen-shell"><div class="screen-leds"><i></i><span>RETROGAME OS / ONLINE</span></div><div id="page"></div></div></main><nav class="mobile-arcade-nav" aria-label="Главная навигация">${bottom.map(([k,n,icon])=>`<button data-nav="${k}" class="${view===k?"active":""}"><i class="nav-sprite ${icon}"><img src="/assets/retro-ui/IMG_9419.png" alt=""></i><span>${n}</span></button>`).join("")}</nav></div>`;
-  bind("[data-nav]", (el) => navigate(el.dataset.nav));
+  return `<header class="reference-playerbar"><button id="profile-card" class="reference-player"><span class="reference-avatar">${esc(u.name.slice(0,2))}</span><span><b>${esc(u.name)}</b><small>★ LV. ${u.level}</small><progress max="${u.xpNext-u.xpFloor}" value="${u.xp-u.xpFloor}" aria-label="Опыт"></progress></span></button><div class="reference-wallet"><button id="coin-shop" aria-label="Магазин сундуков"><span class="pixel-coin"></span><b>${Number(u.coins||0).toLocaleString('ru-RU')}</b><span class="wallet-plus">+</span></button><button id="home-settings" aria-label="Настройки">⚙</button></div></header>`;
+}
+function roomNav(selected = view) {
+  return `<nav class="reference-nav" aria-label="Навигация меню">${[['games','HOME','nav-home'],['leaderboard','LEADERBOARD','nav-score'],['collection','COLLECTION','nav-collection'],['cases','CASES','nav-skins'],['profile','PROFILE','nav-profile']].map(([dest,label,icon])=>`<button data-dest="${dest}" class="${dest===selected?'active':''}"><i class="nav-sprite ${icon}" aria-hidden="true"></i><span>${label}</span></button>`).join('')}</nav>`;
+}
+function shell() {
+  const home = view === "games";
+  $("#app").innerHTML = `<div class="layout arcade-shell reference-home"><main class="main console-main"><div class="console-screen-shell">${home ? '<div id="page"></div>' : `<section class="reference-room reference-subpage">${playerBar()}<div class="reference-subhead"><button data-dest="games" aria-label="На главную">‹ HOME</button><span>PLAY › COLLECT › COMPETE</span></div><div id="page" class="reference-page-content"></div>${roomNav()}${data.user.admin?'<button class="reference-admin" data-dest="admin">ADMIN</button>':''}</section>`}</div></main></div>`;
+  if (!home) {
+    bind('[data-dest]', el => navigate(el.dataset.dest));
+    $('#profile-card').onclick = () => navigate('profile');
+    $('#home-settings').onclick = () => navigate('settings');
+    $('#coin-shop').onclick = () => navigate('cases');
+  }
 }
 async function navigate(next = "games") {
   view = next;
@@ -129,13 +137,13 @@ function hub() {
   const cards=order.map(id=>data.games.find(g=>g.id===id)).filter(Boolean);
   $(".arcade-shell").classList.add("reference-home");
   $("#page").innerHTML=`<section class="reference-room">
-    <header class="reference-playerbar"><button id="profile-card" class="reference-player"><span class="reference-avatar">${esc(data.user.name.slice(0,2))}</span><span><b>${esc(data.user.name)}</b><small>★ LV. ${data.user.level}</small><progress max="${data.user.xpNext-data.user.xpFloor}" value="${data.user.xp-data.user.xpFloor}" aria-label="Опыт"></progress></span></button><div class="reference-wallet"><button id="coin-shop"><span class="pixel-coin"></span><b>${Number(data.user.coins||0).toLocaleString('ru-RU')}</b><span class="wallet-plus">+</span></button><button id="home-settings" aria-label="Настройки">⚙</button></div></header>
+    ${playerBar()}
     <div class="reference-logo"><img src="/assets/retro-ui/IMG_9417.png" alt="Retro Arcade — Play Collect Compete"></div>
     ${data.active?`<div class="notice row"><span>Сохранённый забег · ${esc(data.active.game)}</span><button id="resume">Продолжить</button><button id="abandon">Завершить</button></div>`:''}
     <div class="reference-content"><div class="reference-grid">${cards.map((g,i)=>`<button class="reference-card" data-play="${g.id}" style="--col:${i%3};--row:${Math.floor(i/3)};--edge:${g.color||'#879db8'}" ${g.enabled?'':'disabled'}><span class="reference-cover"></span><b>${labels[g.id]}</b><small>${g.id==='platformer'?'LV '+Math.min(9,data.user.progress):'BEST '+(data.user.stats['best-'+g.id]||0)}</small></button>`).join('')}<button class="reference-card" id="more-games" style="--col:2;--row:1;--edge:#8993a2"><span class="reference-cover"></span><b>MORE GAMES</b></button></div>
     <aside class="reference-shortcuts"><button data-dest="collection"><span class="shortcut-art inventory-art"></span><span>INVENTORY</span></button><button data-dest="profile"><span class="shortcut-art trophy-art"></span><span>ACHIEVEMENTS</span></button><button data-dest="cases"><span class="shortcut-art shop-art"></span><span>SHOP</span></button><button data-dest="challenges"><span class="shortcut-art tasks-art"></span><span>DAILY TASKS</span></button></aside></div>
     <button class="reference-loot" id="loot-banner"><span class="loot-sprite"><img src="/assets/loot/arcade.webp" alt="Аркадный сундук"></span><span><b>RANDOM LOOTBOX</b><small>Сундуки и новые скины</small></span><strong>›</strong></button>
-    <nav class="reference-nav" aria-label="Навигация меню">${[['games','HOME','nav-home'],['leaderboard','LEADERBOARD','nav-score'],['collection','COLLECTION','nav-skins'],['profile','PROFILE','nav-profile']].map(([dest,label,icon])=>`<button data-dest="${dest}" class="${dest==='games'?'active':''}"><i class="nav-sprite ${icon}"><img src="/assets/retro-ui/IMG_9419.png" alt=""></i><span>${label}</span></button>`).join('')}</nav>
+    ${roomNav('games')}
     ${data.user.admin?'<button class="reference-admin" data-dest="admin">ADMIN</button>':''}
   </section>`;
   bind('[data-dest]',el=>navigate(el.dataset.dest));

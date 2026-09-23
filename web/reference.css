@@ -545,6 +545,38 @@
 .reference-nav button.active{background:linear-gradient(#55332280,#21172350);border-bottom:3px solid #ff9837;color:#ffd064}
 .reference-loot .loot-sprite{position:relative;display:grid;place-items:center;flex:none;width:112px;height:100px;overflow:visible}
 .reference-loot .loot-sprite img{position:static;width:100%;height:100%;object-fit:contain;max-width:100%;filter:drop-shadow(0 5px 7px #08040790)}
+.reference-nav{grid-template-columns:repeat(5,minmax(0,1fr))}
+.reference-nav button{min-width:0;text-align:center;align-content:center}
+.reference-nav button .nav-sprite{width:44px;height:40px;overflow:hidden;background:url('/assets/retro-ui/IMG_9419.png') no-repeat;background-size:540px 102px;image-rendering:pixelated}
+.reference-nav button .nav-home{background-position:-32px -29px}
+.reference-nav button .nav-score{background-position:-290px -29px}
+.reference-nav button .nav-collection{background-position:-114px -29px}
+.reference-nav button .nav-skins{background-position:-199px -29px}
+.reference-nav button .nav-profile{background-position:-474px -29px}
+.reference-subpage{display:flex;flex-direction:column;min-height:100dvh;gap:20px;background-size:100% 100%}
+.reference-subhead{display:flex;align-items:center;justify-content:space-between;margin:4px 0 0}
+.reference-subhead button{padding:8px 11px;background:#0c1220ec;border:2px solid #ac7949;border-radius:6px;color:#ffd37d;font:700 12px monospace}
+.reference-subhead span{color:#ffa94c;font:700 10px monospace;letter-spacing:.08em;text-align:right}
+.reference-page-content{flex:1;min-width:0;padding:20px 23px 32px;background:linear-gradient(145deg,#0d1524ef,#080d19ee);border:2px solid #a36c3e;border-radius:12px;box-shadow:inset 0 0 0 4px #050814,0 14px 35px #0009}
+.reference-page-content .eyebrow{color:#ffad59;letter-spacing:.16em;font:700 12px monospace}
+.reference-page-content h2{font:900 clamp(24px,3vw,38px)/1.1 monospace;color:#ffe4b2;text-shadow:3px 3px #090609}
+.reference-page-content h3{font-family:monospace;color:#ffdda1}
+.reference-page-content .panel,.reference-page-content .skin,.reference-page-content .stat{background:#10192bea;border:2px solid #506182;border-radius:8px;box-shadow:inset 0 0 0 3px #070a12,0 8px 18px #0007}
+.reference-page-content .filters{margin:24px 0 18px;gap:8px}
+.reference-page-content .filters button,.reference-page-content .skin button,.reference-page-content .panel button,.reference-page-content #profile-settings{background:#172238;border:2px solid #506181;border-radius:6px;color:#e6e7ec;font:700 11px monospace}
+.reference-page-content .filters button.active{background:#56321e;border-color:#f3a34f;color:#ffd27e}
+.reference-page-content button.primary{background:#efaa48;border-color:#ffd47b;color:#241305}
+.reference-page-content .panel table{font:14px monospace}
+.reference-page-content th{color:#ffbe69;letter-spacing:.1em}
+.reference-page-content td,.reference-page-content th{border-color:#394763}
+.reference-page-content tr.you{background:#db8a3424}
+.reference-page-content .stat strong{color:#ffb350}
+.reference-page-content .collection{grid-template-columns:repeat(3,minmax(0,1fr))}
+.reference-page-content .skin{padding:12px;min-width:0}
+.reference-page-content .skin strong{overflow-wrap:anywhere}
+.reference-page-content .case-shop{grid-template-columns:repeat(2,minmax(0,1fr))}
+.reference-subpage .reference-nav{position:sticky;bottom:8px;z-index:12;width:100%;margin-top:auto;border-color:#b77b41;box-shadow:0 0 0 3px #080b14,0 5px 22px #000d}
+.reference-subpage .reference-admin{margin-top:0}
 .case-shop{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;max-width:none;margin-top:25px}
 .case-card{--tier:#ecab54;--halo:#ecab543a;display:flex;flex-direction:column;min-width:0;min-height:0;background:linear-gradient(#1b2033,#101522);border:2px solid var(--tier);border-radius:13px;box-shadow:inset 0 0 0 4px #070b14,0 14px 30px #0008}
 .case-card.tier-rare{--tier:#69bafa;--halo:#4199ff55}
@@ -577,4 +609,23 @@
  .case-actions button{font-size:10px;padding:8px 3px}
  .reference-loot .loot-sprite{width:76px;height:70px;flex:0 0 76px}
  .reference-loot .loot-sprite img{width:100%;height:100%;position:static;max-width:100%}
+ .reference-subpage{gap:9px;padding-bottom:calc(86px + env(safe-area-inset-bottom,0px));background-size:auto 100%}
+ .reference-subhead{margin:0}
+ .reference-subhead span{font-size:8px;max-width:55%}
+ .reference-page-content{padding:15px 11px 25px;border-width:2px;border-radius:8px;min-height:64dvh}
+ .reference-page-content .panel{padding:13px 8px;overflow-x:auto}
+ .reference-page-content .panel table{font-size:11px}
+ .reference-page-content td,.reference-page-content th{padding:13px 5px}
+ .reference-page-content .filters{gap:6px;margin:18px 0}
+ .reference-page-content .filters button{font-size:10px;padding:8px 9px}
+ .reference-page-content .collection{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+ .reference-page-content .skin{padding:8px;gap:6px}
+ .reference-page-content .skin strong{font-size:12px}
+ .reference-page-content .skin small{font-size:8px}
+ .reference-page-content .stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .reference-page-content .stat{padding:15px}
+ .reference-page-content .row{flex-wrap:wrap}
+ .reference-subpage .reference-nav{position:fixed;left:0;right:0;bottom:0;width:100%;padding:5px 3px calc(5px + env(safe-area-inset-bottom,0px));border:0;border-top:2px solid #b77b41;border-radius:0;background:#080c18f5;box-shadow:0 -4px 15px #000c}
+ .reference-nav button{font-size:8px;gap:1px;min-height:52px;padding:3px 0}
+ .reference-nav button .nav-sprite{width:39px;height:36px}
 }
