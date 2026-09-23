@@ -28,16 +28,29 @@ export function loadSnakeArt() {
     });
   return ready;
 }
-function sprite(c, id, x, y, z, rotation = 0, scale = 1) {
+function sprite(c, id, x, y, z, rotation = 0, scale = 1, flipX = false) {
   const f = frames[id];
   c.save();
   c.translate((x + 0.5) * z, (y + 0.5) * z);
   c.rotate(rotation);
+  if (flipX) c.scale(-1, 1);
   const ratio = f[2] / f[3],
     w = z * scale,
     h = id === 1 ? z * 0.85 : id === 3 ? z * 0.75 : w / ratio;
   c.drawImage(atlas, ...f, -w / 2, -h / 2, w, h);
   c.restore();
+}
+// The source head faces right, with its eyes above its light belly. A 180°
+// rotation would make it crawl upside down when travelling left.
+export function headPose(dir) {
+  return dir === 3
+    ? { rotation: 0, flipX: true }
+    : { rotation: ((dir - 1) * Math.PI) / 2, flipX: false };
+}
+
+export function snakeSpine(body) {
+  // The interpolated centers form one continuous path even during a corner.
+  return body.map((p) => ({ x: p.x + 0.5, y: p.y + 0.5 }));
 }
 export function drawSnake(c, s, z, skin, settings) {
   if (!arena || !atlas) return;
@@ -65,11 +78,31 @@ export function drawSnake(c, s, z, skin, settings) {
         ? "saturate(.1) brightness(1.5)"
         : `hue-rotate(${hues[part] || 0}deg)`;
   }
+  if (body.length > 1) {
+    const spine = snakeSpine(body);
+    // An underlay bridges transparent sprite margins and follows the same
+    // sub-cell interpolation as the head and body. It has round, joined
+    // corners rather than disconnected individual tiles.
+    c.save();
+    c.lineJoin = "round";
+    c.lineCap = "round";
+    c.beginPath();
+    c.moveTo(spine[0].x * z, spine[0].y * z);
+    for (const point of spine.slice(1)) c.lineTo(point.x * z, point.y * z);
+    c.strokeStyle = "#173d12";
+    c.lineWidth = z * 0.94;
+    c.stroke();
+    c.strokeStyle = "#72c829";
+    c.lineWidth = z * 0.78;
+    c.stroke();
+    c.restore();
+  }
   for (let i = body.length - 1; i >= 0; i--) {
     const p = body[i],
       logical = s.body[i];
     if (!i) {
-      sprite(c, 0, p.x, p.y, z, ((s.dir - 1) * Math.PI) / 2, 1.2);
+      const pose = headPose(s.dir);
+      sprite(c, 0, p.x, p.y, z, pose.rotation, 1.2, pose.flipX);
       continue;
     }
     const prev = s.body[i - 1],
@@ -77,7 +110,7 @@ export function drawSnake(c, s, z, skin, settings) {
       dy = prev.y - logical.y,
       angle = Math.atan2(dy, dx);
     if (i === body.length - 1) {
-      sprite(c, 3, p.x, p.y, z, angle, 1.14);
+      sprite(c, 3, p.x, p.y, z, dy ? angle : 0, 1.14, dx < 0);
       continue;
     }
     const next = s.body[i + 1],
@@ -95,7 +128,7 @@ export function drawSnake(c, s, z, skin, settings) {
           break;
         }
       sprite(c, 2, p.x, p.y, z, (turn * Math.PI) / 2, 1.14);
-    } else sprite(c, 1, p.x, p.y, z, angle, 1.15);
+    } else sprite(c, 1, p.x, p.y, z, dy ? Math.PI / 2 : 0, 1.15);
   }
   c.restore();
   if (settings.lighting) {

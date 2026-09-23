@@ -377,19 +377,19 @@
     font-size: 18px;
   }
   .reference-logo {
-    margin: 6px 0 15px;
+    margin: 3px 0 9px;
   }
   .reference-logo img {
-    width: 62%;
-    max-width: 265px;
+    width: 54%;
+    max-width: 230px;
   }
   .reference-grid {
-    gap: 9px;
+    gap: 7px;
   }
   .reference-card {
     border-width: 2px;
     border-radius: 6px;
-    aspect-ratio: 0.83;
+    aspect-ratio: 0.94;
   }
   .reference-card > b {
     font-size: 12px;
@@ -404,13 +404,13 @@
     grid-template-columns: repeat(4, 1fr);
     grid-template-rows: 1fr;
     width: 100%;
-    margin-top: 15px;
-    padding: 5px;
+    margin-top: 10px;
+    padding: 2px;
     border-color: #384356;
   }
   .reference-shortcuts button {
     font-size: 8px;
-    gap: 3px;
+    gap: 0;
   }
   .shortcut-art {
     transform: scale(0.8);
@@ -419,8 +419,8 @@
   .reference-loot {
     width: 97%;
     gap: 12px;
-    margin: 17px auto 22px;
-    padding: 12px 8px;
+    margin: 12px auto 12px;
+    padding: 7px 8px;
   }
   .reference-loot .loot-sprite {
     flex: 0 0 58px;
@@ -435,7 +435,7 @@
     font-size: 31px;
   }
   .reference-nav {
-    padding: 9px 4px;
+    padding: 6px 4px;
   }
   .reference-nav button {
     gap: 5px;

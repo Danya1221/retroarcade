@@ -38,6 +38,27 @@ await page.screenshot({
   path: "test-results/snake-desktop.png",
   fullPage: true,
 });
+await page.evaluate(async () => {
+  const { loadSnakeArt, drawSnake } = await import("/snake-art.js");
+  await loadSnakeArt();
+  const demo = document.createElement("canvas");
+  demo.id = "snake-turn-fixture";
+  demo.width = 768;
+  demo.height = 576;
+  document.body.append(demo);
+  const body = [
+    { x: 9, y: 7 }, { x: 10, y: 7 }, { x: 11, y: 7 },
+    { x: 12, y: 7 }, { x: 12, y: 8 }, { x: 12, y: 9 },
+    { x: 11, y: 9 }, { x: 10, y: 9 }, { x: 9, y: 9 },
+  ];
+  drawSnake(demo.getContext("2d"), {
+    width: 24, height: 18, dir: 3, body, walls: [], moving: [],
+    food: { x: 5, y: 8 }, eaten: 6,
+    _visualBody: body.map((p, i) => i < 4 ? { x: p.x + 0.25, y: p.y } : p),
+  }, 32, { theme: "base" }, { lighting: false });
+});
+await page.locator("#snake-turn-fixture").screenshot({ path: "test-results/snake-turn.png" });
+await page.locator("#snake-turn-fixture").evaluate((el) => el.remove());
 await page.waitForTimeout(5200);
 if (await page.locator("#pause").count()) await page.locator("#exit").click();
 if (await page.locator("#result-close").count())
