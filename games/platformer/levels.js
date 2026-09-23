@@ -93,7 +93,13 @@ export function buildLevel(level) {
   // The key sits along the upper approach to its chained chest.
   const keys=chests.filter(c=>c.locked).map(c=>({x:c.x-3,y:level<=3?Math.max(4.2,c.y-1.25):c.y-1.25,taken:false}));
   const ladders=elevated.filter((_,i)=>i%3===0).map(f=>({x:f.x+1,y:f.y,bottom:mainY}));
-  if(level<=3)ladders.push({x:13.5,y:mainY,bottom:14});
+  if(level<=3){
+    // Every lower passage has a visible return route on both banks.
+    for(const ground of platforms.filter(f=>f.type==="ground")){
+      if(ground.x+2<def.length-2)ladders.push({x:ground.x+1.5,y:mainY,bottom:14});
+      if(ground.x+ground.w-2>3)ladders.push({x:ground.x+ground.w-1.5,y:mainY,bottom:14});
+    }
+  }
   const upperCoins=Array.from({length:16},(_,i)=>({x:5+i*Math.max(4,Math.floor((def.length-12)/16)),y:mainY-4+(i%3)})).filter(c=>c.x<def.length-5);
   if(level<=3)upperCoins.push({x:11,y:12.2},{x:26,y:12.2});
   return {...def,layoutVersion:3,mainY,platforms,enemies,chests,keys,ladders,

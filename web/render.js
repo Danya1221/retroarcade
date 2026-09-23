@@ -2,6 +2,7 @@ import {drawSnake} from "./snake-art.js";
 import { worlds } from "/shared/content.js";
 const platformArt = typeof Image === "undefined" ? {} : Object.fromEntries(
   [["valley", "/assets/platformer/valley.webp"], ["terrain", "/assets/platformer/grass-stone.webp"], ["chest", "/assets/platformer/chest.webp"],
+   ...["grass-cliff","ancient-stone","cave-interior","wood-bridge","castle-green","castle-ruins"].map(name=>[name,"/assets/platformer/"+name+".webp"]),
    ...["animations","blue","green","yellow","black","white","purple"].map(name=>["hero-"+name,"/assets/platformer/hero-"+name+".png"])]
     .map(([name, path]) => { const image = new Image(); image.src = path; return [name, image]; }),
 );
@@ -116,9 +117,10 @@ function drawHero(c,s,z,skin) {
     actor(c,s.player.x*z,s.player.y*z,z,"#e84b3b",Math.floor(s.tick/5));return;
   }
   const climbing=(s.ladders||[]).some(l=>Math.abs(s.player.x-l.x)<.7 && s.player.y>=l.y-1 && s.player.y<l.bottom-1 && Math.abs(s.player.vy)>.02);
-  const row=climbing?4:s.player.vy<-.09?2:s.player.vy>.14?3:Math.abs(s.player.vx)>.02?1:0;
-  const frames=[7,7,2,1,5][row], speed=row===1?4:row===4?7:11;
-  const frame=Math.floor(s.tick/speed)%frames;
+  const attacking=s.tick<(s.attackingUntil||0);
+  const row=attacking?5:climbing?4:s.player.vy<-.09?2:s.player.vy>.14?3:Math.abs(s.player.vx)>.02?1:0;
+  const frames=[7,7,2,1,2,3][row], speed=row===1?4:row===4?7:11;
+  const frame=attacking?Math.min(2,Math.floor((s.tick-s.attackStarted)/4)):Math.floor(s.tick/speed)%frames;
   const x=s.player.x*z-.72*z,y=(s.player.y+.9)*z-2.08*z;
   c.save();c.imageSmoothingEnabled=false;
   if(s.facing<0){c.translate((2*s.player.x+.7)*z,0);c.scale(-1,1);}
@@ -354,15 +356,35 @@ export function render(c, s, color = "#bdff70", settings = {}, skin = {}) {
       if(s.world===1)rect(c,0,0,24*z,17*z,"#8c706244");
       if(s.world===2)rect(c,0,0,24*z,17*z,"#3b323d99");
       if(s.world===3)rect(c,0,0,24*z,17*z,"#07284899");
-      drawLandmark(c,z,s.world,s.level===2 || s.level===3,s.mainY===8);
+      const castle=platformArt[s.level===1?"castle-green":"castle-ruins"];
+      if(s.world===0 && castle?.complete && castle.naturalWidth){
+        c.imageSmoothingEnabled=false;
+        // The castle sits on the distant ridge, behind the playable platforms.
+        c.drawImage(castle,10.2*z,1.15*z,13*z,8.65*z);
+      } else drawLandmark(c,z,s.world,s.level===2 || s.level===3,s.mainY===8);
     }
     c.save();
     c.translate(-camera * z, 0);
+    if(s.mainY===8){
+      const cave=platformArt["cave-interior"];
+      if(cave?.complete && cave.naturalWidth){
+        c.imageSmoothingEnabled=false;
+        for(const f of s.platforms.filter(f=>f.type==="ground"))
+          for(let sx=f.x;sx<f.x+f.w;sx+=5)
+            c.drawImage(cave,sx*z,11*z,Math.min(5,f.x+f.w-sx)*z,3*z);
+      }
+    }
     for (const f of s.platforms) {
       if (f.type === "falling" && f.trigger && s.tick - f.trigger > 22) continue;
       if (f.type === "vanish" && Math.floor(s.tick / 45) % 2) continue;
       if(f.type==="bridge"){
         const left=f.x*z,top=f.y*z;
+        const bridge=platformArt["wood-bridge"];
+        if(grassWorld && bridge?.complete && bridge.naturalWidth){
+          c.imageSmoothingEnabled=false;
+          c.drawImage(bridge,left,top-z*.65,f.w*z,z*1.05);
+          continue;
+        }
         c.strokeStyle="#4d3229";c.lineWidth=Math.max(2,z*.11);
         c.beginPath();c.moveTo(left,top-z*.65);c.quadraticCurveTo(left+f.w*z/2,top-z*.28,left+f.w*z,top-z*.65);c.stroke();
         for(let i=0;i<f.w*2;i++){
@@ -375,8 +397,15 @@ export function render(c, s, color = "#bdff70", settings = {}, skin = {}) {
         }
         continue;
       }
+      const cliff=platformArt["grass-cliff"], stone=platformArt["ancient-stone"];
       for (let i = 0; i < f.w; i++) {
-        if (grassWorld && terrain?.complete && terrain.naturalWidth) {
+        if(grassWorld && cliff?.complete && cliff.naturalWidth){
+          c.imageSmoothingEnabled=false;
+          // Crop four different stretches of the painted cliff so its plants
+          // and rock forms continue across tiles without a repeated stamp.
+          const stripe=Math.floor((i+f.x)%4),sw=cliff.naturalWidth/4;
+          c.drawImage(cliff,stripe*sw,0,sw,cliff.naturalHeight*.48,(f.x+i)*z,f.y*z,z,z);
+        } else if (grassWorld && terrain?.complete && terrain.naturalWidth) {
           c.imageSmoothingEnabled=false;
           c.drawImage(terrain,(f.x+i)*z,f.y*z,z,z);
         } else {
@@ -385,19 +414,16 @@ export function render(c, s, color = "#bdff70", settings = {}, skin = {}) {
         }
         if (f.type === "ground" || f.type === "lower")
           for (let j = 1; j < (f.type==="lower"?4:s.mainY===8?3:4); j++)
-            if (grassWorld && terrain?.complete && terrain.naturalWidth)
+            if (grassWorld && cliff?.complete && cliff.naturalWidth){
+              const rock=f.type==="lower"?stone:cliff;
+              const sx=((i*7+j*3)%4)*rock.naturalWidth/4;
+              c.drawImage(rock,sx,rock.naturalHeight*.45,rock.naturalWidth/4,rock.naturalHeight*.4,(f.x+i)*z,(f.y+j)*z,z,z);
+            }
+            else if (grassWorld && terrain?.complete && terrain.naturalWidth)
               c.drawImage(terrain,0,32,128,96,(f.x+i)*z,(f.y+j)*z,z,z);
             else tile(c, (f.x + i) * z, (f.y + j) * z, z, "#30303c");
       }
-      if(s.mainY===8 && f.type==="ground"){
-        for(const edge of [f.x,f.x+f.w-1]){
-          for(let cy=11;cy<14;cy++){
-            if(grassWorld && terrain?.complete && terrain.naturalWidth)
-              c.drawImage(terrain,0,32,128,96,edge*z,cy*z,z,z);
-            else tile(c,edge*z,cy*z,z,"#47445e");
-          }
-        }
-      }
+      // The open cave passage below has no false decorative collision walls.
     }
     for(const ladder of s.ladders||[]){
       const lx=ladder.x*z, top=ladder.y*z;
@@ -407,10 +433,10 @@ export function render(c, s, color = "#bdff70", settings = {}, skin = {}) {
         rect(c,lx-z*.16,ly*z,z*.64,z*.13,"#ca9663");
     }
     if(s.level===1 && s.player.x>25 && s.player.x<48){
-      const rx=34.6*z,ry=(s.mainY-3)*z;
+      const rx=(s.medallionLost?38.2:32.5)*z,ry=(s.mainY-1.4)*z;
       c.save();c.shadowColor="#5be8ff";c.shadowBlur=z*.7;c.strokeStyle=s.medallionLost?"#9bc1ff":"#78f8ff";
       c.lineWidth=z*.15;c.beginPath();c.ellipse(rx,ry,z*.55,z*1.4,Math.sin(s.tick/17)*.12,0,Math.PI*2);c.stroke();c.restore();
-      if(!s.medallionLost)actor(c,35.6*z,(s.mainY-1.7)*z,z,"#96a9e6",0);
+      if(!s.medallionLost)actor(c,33*z,(s.mainY-1.5)*z,z,"#96a9e6",0);
     }
     for (const chest of s.chests || []){
       drawChest(c,chest,z);

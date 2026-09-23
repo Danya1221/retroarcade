@@ -16,6 +16,8 @@ export function init(s) {
     kills: 0,
     projectiles: [],
     facing: 1,
+    attackingUntil: 0,
+    attackStarted: 0,
     storyIndex: 0,
     storyQueue: [],
     storyCue: null,
@@ -52,6 +54,7 @@ export function step(s, input) {
     oldY = p.y;
   const actionPressed=!!(input&32) && !s.actionWas;
   s.actionWas=!!(input&32);
+  if(actionPressed){s.attackStarted=s.tick;s.attackingUntil=s.tick+12;}
   let moving = 0;
   if (input & 2) moving++;
   if (input & 8) moving--;
@@ -185,21 +188,21 @@ export function step(s, input) {
     if (Math.abs(e.x - e.home) > 3) e.vx *= -1;
     if (["ranged", "boss"].includes(e.type) && s.tick % 60 === 0)
       s.projectiles.push({ x: e.x, y: e.y, dx: Math.sign(p.x - e.x) * 0.16 });
+    if (
+      actionPressed && Math.sign(e.x-p.x)===s.facing &&
+      Math.abs(p.x - e.x) < 2.1 &&
+      Math.abs(p.y - e.y) < 1.8
+    ) {
+      e.hp--;
+      s.score += 10;
+    }
+    if(e.hp<=0)continue;
     if (Math.abs(p.x - e.x) < 0.85 && Math.abs(p.y - e.y) < 1) {
       if (p.vy > 0 && oldY + 0.5 < e.y) {
         e.hp--;
         p.vy = -0.33;
         s.score += 30;
       } else hit(s);
-    }
-    if (
-      input & 32 &&
-      s.tick % 20 === 0 &&
-      Math.abs(p.x - e.x) < 1.8 &&
-      Math.abs(p.y - e.y) < 1.8
-    ) {
-      e.hp--;
-      s.score += 10;
     }
   }
   s.kills += s.enemies.filter((e) => e.hp <= 0).length;

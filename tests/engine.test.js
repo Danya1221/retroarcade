@@ -204,6 +204,21 @@ test("Green Hills theft happens during play and ladder climbs toward the first l
   tick(climb, 1);
   assert.ok(climb.player.y < y, "up input climbs the ladder");
 });
+test("platformer action starts a sword swing and hits only toward the enemy", () => {
+  const s=createGame("platformer","sword",1);
+  s.traps=[];s.chests=[];
+  s.player.x=4;s.player.y=7.1;s.ground=true;
+  s.enemies=[{x:5.2,y:6.8,vx:0,type:"patrol",hp:2,home:5.2}];
+  tick(s,32);
+  assert.equal(s.enemies[0].hp,1);
+  assert.ok(s.attackingUntil>s.tick);
+  tick(s,32);
+  assert.equal(s.enemies[0].hp,1,"holding action should not hit every frame");
+  tick(s,0);
+  s.facing=-1;
+  tick(s,32);
+  assert.equal(s.enemies[0].hp,1,"sword must face the target");
+});
 test("loot pity guarantees legendary; weights cover low and high roll", () => {
   assert.equal(rollLoot(19, defaultConfig, () => 0).skin.rarity, "LEGENDARY");
   assert.equal(rollLoot(0, defaultConfig, () => 0).skin.rarity, "COMMON");
