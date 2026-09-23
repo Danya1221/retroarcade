@@ -36,7 +36,7 @@ function sprite(c, id, x, y, z, rotation = 0, scale = 1, flipX = false) {
   if (flipX) c.scale(-1, 1);
   const ratio = f[2] / f[3],
     w = z * scale,
-    h = id === 1 ? z * 0.85 : id === 3 ? z * 0.75 : w / ratio;
+    h = w / ratio;
   c.drawImage(atlas, ...f, -w / 2, -h / 2, w, h);
   c.restore();
 }
@@ -49,8 +49,94 @@ export function headPose(dir) {
 }
 
 export function snakeSpine(body) {
-  // The interpolated centers form one continuous path even during a corner.
   return body.map((p) => ({ x: p.x + 0.5, y: p.y + 0.5 }));
+}
+
+// Read the direction from visible positions, not the queued input. The engine
+// may accept a turn several ticks before the head actually enters that cell.
+export function visualHeading(body, fallback) {
+  if (body.length < 2) return fallback;
+  const dx = body[0].x - body[1].x;
+  const dy = body[0].y - body[1].y;
+  if (Math.abs(dx) >= Math.abs(dy)) return dx >= 0 ? 1 : 3;
+  return dy >= 0 ? 2 : 0;
+}
+
+function continuousBody(c, body, z, direction) {
+  if (body.length < 2) return;
+  const spine = snakeSpine(body);
+  const path = (points) => {
+    c.beginPath();
+    c.moveTo(points[0].x * z, points[0].y * z);
+    for (const p of points.slice(1)) c.lineTo(p.x * z, p.y * z);
+  };
+  c.save();
+  c.lineCap = "round";
+  c.lineJoin = "round";
+  path(spine);
+  c.lineWidth = z * 0.94;
+  c.strokeStyle = "#173d12";
+  c.stroke();
+  c.lineWidth = z * 0.81;
+  c.strokeStyle = "#65b627";
+  c.stroke();
+  c.lineWidth = z * 0.64;
+  c.strokeStyle = "#82d43b";
+  c.stroke();
+
+  // One continuous pale edge follows the *curve*, instead of a belly stripe
+  // restarting at every grid cell. Average the normals at corners.
+  const side = direction === 0 || direction === 3 ? 1 : -1;
+  const normals = spine.map((point, i) => {
+    const a = spine[Math.max(0, i - 1)],
+      b = spine[Math.min(i + 1, spine.length - 1)];
+    const vx = b.x - a.x,
+      vy = b.y - a.y,
+      length = Math.hypot(vx, vy) || 1;
+    return { x: (-vy / length) * side, y: (vx / length) * side };
+  });
+  const offset = spine.map((p, i) => ({
+    x: p.x + normals[i].x * 0.27,
+    y: p.y + normals[i].y * 0.27,
+  }));
+  path(offset);
+  c.lineWidth = z * 0.17;
+  c.strokeStyle = "#f1d587";
+  c.stroke();
+
+  // Small staggered scales add texture without the repeated segment borders
+  // present in the original sprite atlas.
+  let travelled = 0,
+    nextScale = 0.55;
+  for (let i = 1; i < spine.length; i++) {
+    const a = spine[i - 1],
+      b = spine[i];
+    const dx = b.x - a.x,
+      dy = b.y - a.y,
+      length = Math.hypot(dx, dy);
+    if (length < 0.001) continue;
+    while (travelled + length >= nextScale) {
+      const fraction = (nextScale - travelled) / length;
+      const x = (a.x + dx * fraction) * z,
+        y = (a.y + dy * fraction) * z;
+      const normal = { x: (-dy / length) * side, y: (dx / length) * side };
+      const alternate = Math.round(nextScale / 0.35) % 2 ? 1 : -1;
+      c.save();
+      c.translate(
+        x - normal.x * z * (0.1 + alternate * 0.06),
+        y - normal.y * z * (0.1 + alternate * 0.06),
+      );
+      c.rotate(Math.atan2(dy, dx));
+      c.beginPath();
+      c.ellipse(0, 0, z * 0.13, z * 0.11, 0, 0, Math.PI * 2);
+      c.fillStyle = alternate > 0 ? "#b6e94e99" : "#3e8c2299";
+      c.fill();
+      c.restore();
+      nextScale += 0.35;
+    }
+    travelled += length;
+  }
+  c.restore();
 }
 export function drawSnake(c, s, z, skin, settings) {
   if (!arena || !atlas) return;
@@ -78,58 +164,11 @@ export function drawSnake(c, s, z, skin, settings) {
         ? "saturate(.1) brightness(1.5)"
         : `hue-rotate(${hues[part] || 0}deg)`;
   }
-  if (body.length > 1) {
-    const spine = snakeSpine(body);
-    // An underlay bridges transparent sprite margins and follows the same
-    // sub-cell interpolation as the head and body. It has round, joined
-    // corners rather than disconnected individual tiles.
-    c.save();
-    c.lineJoin = "round";
-    c.lineCap = "round";
-    c.beginPath();
-    c.moveTo(spine[0].x * z, spine[0].y * z);
-    for (const point of spine.slice(1)) c.lineTo(point.x * z, point.y * z);
-    c.strokeStyle = "#173d12";
-    c.lineWidth = z * 0.94;
-    c.stroke();
-    c.strokeStyle = "#72c829";
-    c.lineWidth = z * 0.78;
-    c.stroke();
-    c.restore();
-  }
-  for (let i = body.length - 1; i >= 0; i--) {
-    const p = body[i],
-      logical = s.body[i];
-    if (!i) {
-      const pose = headPose(s.dir);
-      sprite(c, 0, p.x, p.y, z, pose.rotation, 1.2, pose.flipX);
-      continue;
-    }
-    const prev = s.body[i - 1],
-      dx = prev.x - logical.x,
-      dy = prev.y - logical.y,
-      angle = Math.atan2(dy, dx);
-    if (i === body.length - 1) {
-      sprite(c, 3, p.x, p.y, z, dy ? angle : 0, 1.14, dx < 0);
-      continue;
-    }
-    const next = s.body[i + 1],
-      nx = next.x - logical.x,
-      ny = next.y - logical.y;
-    if (dx * nx + dy * ny === 0) {
-      const set = new Set([
-        dx > 0 ? 1 : dx < 0 ? 3 : dy > 0 ? 2 : 0,
-        nx > 0 ? 1 : nx < 0 ? 3 : ny > 0 ? 2 : 0,
-      ]);
-      let turn = 0;
-      for (let k = 0; k < 4; k++)
-        if (set.has((3 + k) % 4) && set.has((2 + k) % 4)) {
-          turn = k;
-          break;
-        }
-      sprite(c, 2, p.x, p.y, z, (turn * Math.PI) / 2, 1.14);
-    } else sprite(c, 1, p.x, p.y, z, dy ? Math.PI / 2 : 0, 1.15);
-  }
+  const direction = visualHeading(body, s.dir);
+  continuousBody(c, body, z, direction);
+  const pose = headPose(direction),
+    head = body[0];
+  sprite(c, 0, head.x, head.y, z, pose.rotation, 1.2, pose.flipX);
   c.restore();
   if (settings.lighting) {
     const g = c.createRadialGradient(

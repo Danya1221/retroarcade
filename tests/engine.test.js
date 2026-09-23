@@ -7,7 +7,7 @@ import { rollLoot } from "../server/economy.js";
 import { defaultConfig } from "../shared/content.js";
 import { validateTelegram } from "../server/auth.js";
 import { createHmac } from "node:crypto";
-import { headPose, snakeSpine } from "../web/snake-art.js";
+import { headPose, snakeSpine, visualHeading } from "../web/snake-art.js";
 test("5,000 maze seeds: keys before doors and exit reachable", () => {
   for (let seed = 0; seed < 5000; seed++) {
     const m = generate(seed);
@@ -163,14 +163,39 @@ test("Snake head mirrors upright to the left and its render spine stays contiguo
   assert.deepEqual(headPose(1), { rotation: 0, flipX: false });
   assert.deepEqual(headPose(3), { rotation: 0, flipX: true });
   const moving = [
-    { x: 7.5, y: 7 }, { x: 8, y: 7.5 }, { x: 8, y: 8.5 },
-    { x: 8.5, y: 9 }, { x: 9.5, y: 9 },
+    { x: 7.5, y: 7 },
+    { x: 8, y: 7.5 },
+    { x: 8, y: 8.5 },
+    { x: 8.5, y: 9 },
+    { x: 9.5, y: 9 },
   ];
   const spine = snakeSpine(moving);
   assert.equal(spine.length, moving.length);
   for (let i = 1; i < spine.length; i++) {
-    assert.ok(Math.hypot(spine[i].x - spine[i - 1].x, spine[i].y - spine[i - 1].y) <= 1.01);
+    assert.ok(
+      Math.hypot(spine[i].x - spine[i - 1].x, spine[i].y - spine[i - 1].y) <=
+        1.01,
+    );
   }
+  const stationary = [
+    { x: 7, y: 8 },
+    { x: 6, y: 8 },
+  ];
+  assert.equal(
+    visualHeading(stationary, 0),
+    1,
+    "queued upward turn cannot spin the stationary head",
+  );
+  assert.equal(
+    visualHeading(
+      [
+        { x: 7, y: 7.3 },
+        { x: 6.7, y: 8 },
+      ],
+      1,
+    ),
+    0,
+  );
 });
 
 test("legacy tanks saves recover collision from the persisted maze", () => {
