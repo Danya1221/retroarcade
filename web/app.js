@@ -102,7 +102,7 @@ function playerBar() {
   return `<header class="reference-playerbar"><button id="profile-card" class="reference-player"><span class="reference-avatar">${esc(u.name.slice(0,2))}</span><span><b>${esc(u.name)}</b><small>★ LV. ${u.level}</small><progress max="${u.xpNext-u.xpFloor}" value="${u.xp-u.xpFloor}" aria-label="Опыт"></progress></span></button><div class="reference-wallet"><button id="coin-shop" aria-label="Магазин сундуков"><span class="pixel-coin"></span><b>${Number(u.coins||0).toLocaleString('ru-RU')}</b><span class="wallet-plus">+</span></button><button id="home-settings" aria-label="Настройки">⚙</button></div></header>`;
 }
 function roomNav(selected = view) {
-  return `<nav class="reference-nav" aria-label="Навигация меню">${[['games','HOME','nav-home'],['leaderboard','LEADERBOARD','nav-score'],['collection','COLLECTION','nav-collection'],['cases','CASES','nav-skins'],['profile','PROFILE','nav-profile']].map(([dest,label,icon])=>`<button data-dest="${dest}" class="${dest===selected?'active':''}"><i class="nav-sprite ${icon}" aria-hidden="true"></i><span>${label}</span></button>`).join('')}</nav>`;
+  return `<nav class="reference-nav" aria-label="Навигация меню">${[['games','HOME','home'],['leaderboard','LEADERBOARD','leaderboard'],['collection','COLLECTION','collection'],['cases','CASES','cases'],['profile','PROFILE','profile']].map(([dest,label,icon])=>`<button data-dest="${dest}" class="${dest===selected?'active':''}"><i class="nav-sprite" aria-hidden="true"><img src="/assets/retro-ui/nav/${icon}.webp" alt=""></i><span>${label}</span></button>`).join('')}</nav>`;
 }
 function shell() {
   const home = view === "games";
