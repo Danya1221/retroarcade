@@ -30,6 +30,8 @@ export async function play(session, api, settings, skin, onExit, onResult, toast
     snakeFrom = null,
     snakeTo = null,
     snakeMoveTick = null,
+    snakeMoveTime = 0,
+    snakeMoveDuration = 0,
     keys = new Set(),
     touch = new Map(),
     swipe = 0,
@@ -155,6 +157,7 @@ export async function play(session, api, settings, skin, onExit, onResult, toast
       pending = null;
       if (r.conflict) {
         state = structuredClone(r.state);
+        snakeTo = snakeFrom = snakeVisual = snakeMoveTick = null;
         inputs = [];
         toast("Забег восстановлен с сервера");
       } else if (r.result) {
@@ -190,8 +193,10 @@ export async function play(session, api, settings, skin, onExit, onResult, toast
   music(settings);
   function frame(now) {
     if (closed) return;
-    const delta = Math.min(now - last, 150);
+    const elapsed = now - last;
+    const delta = Math.min(elapsed, 150);
     last = now;
+    if (paused && snakeTo) snakeMoveTime += elapsed;
     if (!paused && !state.over) {
       acc += delta;
       while (acc >= 1000 / 30) {
@@ -226,9 +231,14 @@ export async function play(session, api, settings, skin, onExit, onResult, toast
         snakeTo = state.body.map((p) => ({ x: p.x, y: p.y }));
         snakeFrom = snakeTo.map((p) => ({ ...p }));
         snakeMoveTick = state.moveTick;
+        snakeMoveTime = now;
+        snakeMoveDuration = (interval * 1000) / 30;
       }
       if (state.moveTick !== snakeMoveTick) {
-        const previous = snakeTo;
+        // A speed change can cause the next logical step before the current
+        // sprite has reached its old target. Retarget from its visible
+        // position so neither the head nor the body jumps across a cell.
+        const previous = snakeVisual || snakeTo;
         snakeTo = state.body.map((p) => ({ x: p.x, y: p.y }));
         snakeFrom = snakeTo.map((p, i) => {
           if (i === 0) return previous[0] ? { ...previous[0] } : { ...p };
@@ -237,12 +247,10 @@ export async function play(session, api, settings, skin, onExit, onResult, toast
             : { ...p };
         });
         snakeMoveTick = state.moveTick;
+        snakeMoveTime = now;
+        snakeMoveDuration = (interval * 1000) / 30;
       }
-      const elapsedTicks = state.tick - state.moveTick + acc / (1000 / 30);
-      const t = Math.max(0, Math.min(1, elapsedTicks / interval));
-      // Constant-speed interpolation: no easing at cell boundaries, so the
-      // snake never appears to brake and accelerate every grid step.
-      const smooth = t;
+      const smooth = Math.max(0, Math.min(1, (now - snakeMoveTime) / snakeMoveDuration));
       snakeVisual = snakeTo.map((target, i) => {
         const from = snakeFrom[i] || target;
         return {
