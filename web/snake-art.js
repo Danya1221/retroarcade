@@ -1,5 +1,14 @@
 // Production images are loaded only when the Snake game is opened.
-let arena, atlas, frames, ready;
+let arena, atlas, frames, scaleTexture, bellyTexture, ready;
+function textureTile(image, crop, width, height) {
+  const tile = document.createElement("canvas");
+  tile.width = width;
+  tile.height = height;
+  const ctx = tile.getContext("2d");
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(image, ...crop, 0, 0, width, height);
+  return tile;
+}
 export function loadSnakeArt() {
   if (ready) return ready;
   const image = (src) =>
@@ -21,6 +30,10 @@ export function loadSnakeArt() {
       arena = a;
       atlas = b;
       frames = f;
+      // Sample the original hand-drawn scale and belly artwork once. Canvas
+      // repeats it inside one joined body shape, without stamping full tiles.
+      scaleTexture = textureTile(atlas, [398, 151, 105, 51], 20, 10);
+      bellyTexture = textureTile(atlas, [410, 216, 100, 32], 20, 8);
     })
     .catch((e) => {
       ready = null;
@@ -81,7 +94,7 @@ function continuousBody(c, body, z, direction) {
   c.strokeStyle = "#65b627";
   c.stroke();
   c.lineWidth = z * 0.64;
-  c.strokeStyle = "#82d43b";
+  c.strokeStyle = c.createPattern(scaleTexture, "repeat") || "#82d43b";
   c.stroke();
 
   // One continuous pale edge follows the *curve*, instead of a belly stripe
@@ -100,42 +113,9 @@ function continuousBody(c, body, z, direction) {
     y: p.y + normals[i].y * 0.27,
   }));
   path(offset);
-  c.lineWidth = z * 0.17;
-  c.strokeStyle = "#f1d587";
+  c.lineWidth = z * 0.2;
+  c.strokeStyle = c.createPattern(bellyTexture, "repeat") || "#f1d587";
   c.stroke();
-
-  // Small staggered scales add texture without the repeated segment borders
-  // present in the original sprite atlas.
-  let travelled = 0,
-    nextScale = 0.55;
-  for (let i = 1; i < spine.length; i++) {
-    const a = spine[i - 1],
-      b = spine[i];
-    const dx = b.x - a.x,
-      dy = b.y - a.y,
-      length = Math.hypot(dx, dy);
-    if (length < 0.001) continue;
-    while (travelled + length >= nextScale) {
-      const fraction = (nextScale - travelled) / length;
-      const x = (a.x + dx * fraction) * z,
-        y = (a.y + dy * fraction) * z;
-      const normal = { x: (-dy / length) * side, y: (dx / length) * side };
-      const alternate = Math.round(nextScale / 0.35) % 2 ? 1 : -1;
-      c.save();
-      c.translate(
-        x - normal.x * z * (0.1 + alternate * 0.06),
-        y - normal.y * z * (0.1 + alternate * 0.06),
-      );
-      c.rotate(Math.atan2(dy, dx));
-      c.beginPath();
-      c.ellipse(0, 0, z * 0.13, z * 0.11, 0, 0, Math.PI * 2);
-      c.fillStyle = alternate > 0 ? "#b6e94e99" : "#3e8c2299";
-      c.fill();
-      c.restore();
-      nextScale += 0.35;
-    }
-    travelled += length;
-  }
   c.restore();
 }
 export function drawSnake(c, s, z, skin, settings) {
