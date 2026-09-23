@@ -41,7 +41,7 @@ export function loadSnakeArt() {
     });
   return ready;
 }
-function sprite(c, id, x, y, z, rotation = 0, scale = 1, flipX = false) {
+function sprite(c, id, x, y, z, rotation = 0, scale = 1, flipX = false, trimNeck = false) {
   const f = frames[id];
   c.save();
   c.translate((x + 0.5) * z, (y + 0.5) * z);
@@ -50,6 +50,19 @@ function sprite(c, id, x, y, z, rotation = 0, scale = 1, flipX = false) {
   const ratio = f[2] / f[3],
     w = z * scale,
     h = w / ratio;
+  if (trimNeck) {
+    // The atlas head includes a dangling cream throat beneath its rear half.
+    // Trim just that flap; the joined body already supplies the neck and belly.
+    c.beginPath();
+    c.moveTo(-w / 2, -h / 2);
+    c.lineTo(w / 2, -h / 2);
+    c.lineTo(w / 2, h / 2);
+    c.lineTo(w * 0.2, h * 0.45);
+    c.quadraticCurveTo(-w * 0.05, h * 0.24, -w * 0.3, h * 0.24);
+    c.quadraticCurveTo(-w * 0.48, h * 0.25, -w / 2, h * 0.17);
+    c.closePath();
+    c.clip();
+  }
   c.drawImage(atlas, ...f, -w / 2, -h / 2, w, h);
   c.restore();
 }
@@ -169,7 +182,7 @@ export function drawSnake(c, s, z, skin, settings) {
     { x: 0, y: -0.32 },
     { x: 0.32, y: 0 },
   ][direction];
-  sprite(c, 0, head.x + overlap.x, head.y + overlap.y, z, pose.rotation, 2.25, pose.flipX);
+  sprite(c, 0, head.x + overlap.x, head.y + overlap.y, z, pose.rotation, 2.25, pose.flipX, true);
   c.restore();
   if (settings.lighting) {
     const g = c.createRadialGradient(
