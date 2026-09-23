@@ -90,11 +90,13 @@ test("all campaign layouts have a traversable main route", () => {
     // Test the terrain independently; boss and enemy combat are tested apart.
     s.enemies = [];
     s.traps = [];
+    // Walk the upper route separately from the optional cave underneath it.
+    s.platforms=s.platforms.filter(f=>f.type!=="lower");
     let lastJump = -100;
     for (let i = 0; i < 1500 && !s.over; i++) {
       const ground = s.platforms.find((f) =>
         f.type === "ground" && s.player.x + 0.7 > f.x &&
-        s.player.x < f.x + f.w && s.player.y >= 12.9);
+        s.player.x < f.x + f.w && s.player.y >= s.mainY-1.1);
       const distance = (ground?.x + ground?.w ?? 9999) - s.player.x;
       const jump = s.ground && distance > 0.1 && distance < 1.8 && i - lastJump > 8;
       if (jump) lastJump = i;
@@ -104,8 +106,8 @@ test("all campaign layouts have a traversable main route", () => {
       s.won,
       `level ${level}: x=${s.player.x} hp=${s.hp} tick=${s.tick}`,
     );
-    const elevated = s.platforms.filter((f) => f.type !== "ground");
-    assert.ok(elevated[0].y >= 11, `level ${level}: first ledge out of reach`);
+    const elevated = s.platforms.filter((f) => !["ground","bridge"].includes(f.type));
+    assert.ok(elevated[0].y >= s.mainY-3, `level ${level}: first ledge out of reach`);
     for (let i = 1; i < elevated.length; i++)
       assert.ok(elevated[i - 1].y - elevated[i].y <= 2,
         `level ${level}: unreachable upward step ${i}`);
@@ -140,6 +142,43 @@ test("platformer chests open from below; chains consume a found key", () => {
   assert.equal(chained.opened, true);
   assert.equal(s.keysHeld, 0);
   assert.equal(s.boxes, 1);
+});
+test("every platformer chest rests on a permanent surface and opens beside the hero", () => {
+  for(let level=1;level<=15;level++){
+    const s=createGame("platformer","supported-chests",level);
+    for(const chest of s.chests){
+      assert.ok(s.platforms.some(f=>["ground","normal"].includes(f.type) &&
+        Math.abs(f.y-(chest.y+1))<.001 && chest.x>=f.x && chest.x+1<=f.x+f.w),
+        `level ${level}: chest at ${chest.x},${chest.y} has no supporting platform`);
+    }
+    assert.ok(s.platforms.some(f=>f.type==="bridge"),`level ${level}: missing bridge`);
+  }
+  const s=createGame("platformer","open-chest",1);
+  s.enemies=[];s.traps=[];
+  const chest=s.chests.find(c=>!c.locked);
+  s.player.x=chest.x;s.player.y=chest.y+.1;s.player.vy=0;
+  tick(s,32);
+  assert.equal(chest.opened,true);
+  const locked=s.chests.find(c=>c.locked);
+  s.player.x=locked.x;s.player.y=locked.y+.1;s.player.vy=0;
+  tick(s,0);tick(s,32);
+  assert.equal(locked.opened,false);
+  assert.ok(s.storyQueue.some(cue=>/ключ/.test(cue.line)) || /ключ/.test(s.storyCue?.line||""));
+  s.keysHeld=1;
+  tick(s,0);tick(s,32);
+  assert.equal(locked.opened,true);
+  assert.equal(s.keysHeld,0);
+});
+test("Green Hills has a playable lower cave and a ladder back to the main route", () => {
+  const s=createGame("platformer","two-routes",1);
+  s.enemies=[];s.traps=[];
+  assert.equal(s.mainY,8);
+  s.player.x=13.5;
+  s.player.y=7.1;
+  for(let i=0;i<60;i++)tick(s,4);
+  assert.ok(s.player.y>12,`ladder descent stopped at ${s.player.y}`);
+  for(let i=0;i<65;i++)tick(s,1);
+  assert.ok(s.player.y<8,`cannot return to upper route: ${s.player.y}`);
 });
 test("Green Hills theft happens during play and ladder climbs toward the first ledge", () => {
   const s = createGame("platformer", "green-hills", 1);

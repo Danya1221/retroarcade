@@ -1,15 +1,16 @@
 import { buildLevel } from "./levels.js";
 export function init(s) {
-  Object.assign(s, buildLevel(s.level), {
+  const layout=buildLevel(s.level);
+  Object.assign(s, layout, {
     width: 24,
     height: 17,
-    player: { x: 2, y: 12, vx: 0, vy: 0 },
+    player: { x: 2, y: layout.mainY-2, vx: 0, vy: 0 },
     hp: 4,
     keysHeld: 0,
     ground: false,
     jumpWas: false,
     invulnerable: 0,
-    spawn: { x: 2, y: 12 },
+    spawn: { x: 2, y: layout.mainY-2 },
     checkpointTaken: false,
     secretFound: false,
     kills: 0,
@@ -38,8 +39,19 @@ export function step(s, input) {
   // Older active runs can be resumed after the story update.
   s.storyQueue ||= [];
   s.storyIndex ??= 0;
+  if(s.layoutVersion!==3){
+    const layout=buildLevel(s.level);
+    s.platforms=layout.platforms;
+    s.mainY=layout.mainY;
+    s.ladders=layout.ladders;
+    s.chests=layout.chests.map((c,i)=>({...c,opened:!!s.chests?.[i]?.opened}));
+    s.keys=layout.keys.map((key,i)=>({...key,taken:!!s.keys?.[i]?.taken}));
+    s.layoutVersion=3;
+  }
   const p = s.player,
     oldY = p.y;
+  const actionPressed=!!(input&32) && !s.actionWas;
+  s.actionWas=!!(input&32);
   let moving = 0;
   if (input & 2) moving++;
   if (input & 8) moving--;
@@ -62,12 +74,21 @@ export function step(s, input) {
   } else p.vy = Math.min(p.vy + 0.024, 0.6);
   p.x = Math.max(0, Math.min(s.length - 1, p.x + p.vx));
   p.y += p.vy;
-  // Treasure chests are struck from underneath. A chained chest stays shut
-  // until the player has found a key on an earlier side route.
+  // Chests rest on solid ground or a ledge. Open them beside the hero with E;
+  // upward hits remain supported for previously saved runs and arcade blocks.
   for (const chest of s.chests || []) {
-    if (chest.opened || p.vy >= 0 || p.x + 0.7 <= chest.x || p.x >= chest.x + 1 ||
-        oldY < chest.y + 0.9 || p.y > chest.y + 0.9) continue;
-    if (chest.locked && !s.keysHeld) continue;
+    const adjacent=actionPressed && Math.abs(p.x+.35-(chest.x+.5))<1.15 &&
+      Math.abs(p.y+.45-(chest.y+.5))<1.1;
+    const headbutt=p.vy<0 && p.x+.7>chest.x && p.x<chest.x+1 &&
+      oldY>=chest.y+.9 && p.y<=chest.y+.9;
+    if(chest.opened || !(adjacent || headbutt))continue;
+    if(chest.locked && !s.keysHeld){
+      if(adjacent && s.tick>(s.lockHintUntil||0)){
+        s.storyQueue.push({line:"Цепь не поддаётся. Найди ключ на уровне.",kind:"clue"});
+        s.lockHintUntil=s.tick+100;
+      }
+      continue;
+    }
     if (chest.locked) s.keysHeld--;
     chest.opened = true;
     s.score += chest.locked ? 180 : 80;
@@ -75,7 +96,7 @@ export function step(s, input) {
     else if (s.hp < 4 && s.chests.indexOf(chest) % 3 === 0) s.hp++;
     if (chest.locked && s.chests.indexOf(chest) === 1)
       s.storyQueue.push({line:["На дне сундука — обрывок карты той же долины.","Метка стоит там, где в другую эпоху был замок."][s.world%2],kind:"clue"});
-    p.vy = 0.05;
+    if(headbutt)p.vy=0.05;
   }
   s.ground = false;
   for (const f of s.platforms) {
@@ -87,7 +108,9 @@ export function step(s, input) {
       p.x < f.x + f.w &&
       oldY + 0.9 <= f.y + 0.06 &&
       p.y + 0.9 >= f.y &&
-      p.vy >= 0
+      p.vy >= 0 &&
+      !(climbing && p.vy>0 && Math.abs(f.y-ladder.y)<.01 &&
+        p.x+0.7>ladder.x-.4 && p.x<ladder.x+.4)
     ) {
       p.y = f.y - 0.9;
       p.vy = 0;
@@ -112,7 +135,7 @@ export function step(s, input) {
   if (s.boss && p.x > s.length - 16 && !s.arenaEntered) {
     s.arenaEntered = true;
     s.hp = 4;
-    s.spawn = { x: s.length - 17, y: 12 };
+    s.spawn = { x: s.length - 17, y: s.mainY-2 };
   }
   if (p.x > s.checkpoint.x && !s.checkpointTaken) {
     s.checkpointTaken = true;
@@ -151,12 +174,12 @@ export function step(s, input) {
       (t.type === "fire" && phase > 22 && phase < 72) ||
       (t.type === "pendulum" && Math.abs(Math.sin(s.tick / 20)) > .45);
     const reach = t.type === "pendulum" ? 1.25 : .8;
-    if (on && Math.abs(t.x - p.x) < reach && p.y > 10.7) hit(s);
+    if (on && Math.abs(t.x - p.x) < reach && Math.abs(t.y-p.y)<2.1) hit(s);
   }
   for (const e of s.enemies) {
     if (["flying", "jumping"].includes(e.type))
-      e.y = 11.5 - Math.abs(Math.sin(s.tick / 18)) * 2;
-    else e.y = 12.8;
+      e.y = s.mainY-2.5 - Math.abs(Math.sin(s.tick / 18)) * 2;
+    else e.y = s.mainY-1.2;
     if (e.type === "fast") e.x += e.vx * 2;
     else e.x += e.vx;
     if (Math.abs(e.x - e.home) > 3) e.vx *= -1;

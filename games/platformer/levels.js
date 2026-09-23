@@ -42,40 +42,62 @@ export const levels = [
 
 export function buildLevel(level) {
   const def=levels[level-1]; if(!def) throw Error("Unknown level");
-  const platforms=[{x:0,y:14,w:12,type:"ground"}];
-  const gaps=def.layout==="bridge"?[12,25,39,54,70,88]:[12,30,49,68,88,106];
-  let x=12;
-  for(const gap of gaps.filter(n=>n<def.length-10)){
-    // Keep every compulsory ground gap at three cells; the old increasing
-    // gaps eventually exceeded the horizontal distance of a full jump.
-    const start=x+3, width=Math.min(14+(level%3),def.length-start);
-    if(width>0) platforms.push({x:start,y:14,w:width,type:"ground"});
-    x=start+width;
+  const mainY=level<=3?8:14;
+  // Leave a generous stretch for the tutorial. Later ravines alternate
+  // between a walkable wooden bridge and a short, jumpable gap.
+  const platforms=[];
+  let x=0,gapIndex=0;
+  while(x<def.length){
+    const width=Math.min(x===0?15:14+(level%3),def.length-x);
+    platforms.push({x,y:mainY,w:width,type:"ground"});
+    x+=width;
+    if(def.length-x<=9){if(x<def.length)platforms.push({x,y:mainY,w:def.length-x,type:"ground"});break;}
+    if(gapIndex%2===0)platforms.push({x,y:mainY,w:3,type:"bridge"});
+    gapIndex++;
+    x+=3;
   }
-  if(x<def.length) platforms.push({x,y:14,w:def.length-x,type:"ground"});
+  if(level<=3){
+    for(let lowerX=0;lowerX<def.length-8;lowerX+=24)
+      platforms.push({x:lowerX,y:14,w:Math.min(21,def.length-lowerX),type:"lower"});
+  }
   const elevated=[];
   for(let px=7,n=0;px<def.length-9;px+=6+(n++%2)){
     const vertical=["vertical","shaft","reactor"].includes(def.layout);
     // The first ledge is three cells above ground; taller routes climb in
     // two-cell steps with short enough horizontal gaps for the current jump.
-    const y=vertical?[11,9,7,9,11][n%5]:[11,12,11,13][n%4];
+    const y=level<=3?
+      (vertical?[5,4,5,6,5][n%5]:[5,6,5,7][n%4]):
+      (vertical?[11,9,7,9,11][n%5]:[11,12,11,13][n%4]);
     elevated.push({x:px,y,w:3+(n%3),type:n>0&&n%5===0&&level>2?"falling":n>0&&n%4===0?"moving":n>0&&level>6&&n%6===0?"vanish":"normal",baseX:px});
   }
   platforms.push(...elevated);
   const types=["patrol","flying","jumping","ranged","armored","fast"];
   const enemies=[];
-  for(let ex=20,i=0;ex<def.length-12;ex+=11,i++) enemies.push({x:ex,y:12.8,vx:i%2?.045:-.045,type:types[(i+level)%types.length],hp:types[(i+level)%types.length]==="armored"?2:1,home:ex});
-  if(def.boss) enemies.push({x:def.length-8,y:12,vx:.04,type:"boss",hp:def.final?10:5,home:def.length-8,mini:!def.final});
+  for(let ex=level<=3?9:20,i=0;ex<def.length-12;ex+=12,i++){
+    const type=i===0&&level<=3?"patrol":types[(i+level)%types.length];
+    enemies.push({x:ex,y:mainY-1.2,vx:i%2?.045:-.045,type,hp:type==="armored"?2:1,home:ex});
+  }
+  if(def.boss) enemies.push({x:def.length-8,y:mainY-1.2,vx:.04,type:"boss",hp:def.final?10:5,home:def.length-8,mini:!def.final});
   const trapTypes=level<=2?["spikes"]:level<=5?["spikes","laser","fire"]:["spikes","laser","fire","pendulum","crusher"];
-  const traps=[]; for(let tx=25,i=0;tx<def.length-10;tx+=18,i++) traps.push({x:tx,y:13,type:trapTypes[i%trapTypes.length]});
-  const chests=Array.from({length:Math.floor((def.length-18)/21)},(_,i)=>({
-    x:17+i*21,y:10.5,locked:i%2===1,opened:false,
-  }));
-  // Keys sit above the ground route, beside an accessible upper ledge.
-  const keys=chests.filter(c=>c.locked).map(c=>({x:c.x-5,y:9.5,taken:false}));
-  const ladders=elevated.filter((_,i)=>i%3===0).map(f=>({x:f.x+1,y:f.y,bottom:14}));
-  return {...def,platforms,enemies,chests,keys,ladders,
-    coins:Array.from({length:16},(_,i)=>({x:5+i*Math.max(4,Math.floor((def.length-12)/16)),y:10+(i%3)})).filter(c=>c.x<def.length-5),
-    traps,secret:{x:def.layout==="vertical"?21:11,y:def.layout==="vertical"?10:11},
-    checkpoint:{x:Math.floor(def.length*.52),y:12}};
+  const traps=[]; for(let tx=25,i=0;tx<def.length-10;tx+=18,i++) traps.push({x:tx,y:mainY-1,type:trapTypes[i%trapTypes.length]});
+  const chests=Array.from({length:Math.floor((def.length-18)/21)},(_,i)=>{
+    const target=17+i*21;
+    const stable=elevated.filter(f=>f.type==="normal");
+    const candidates=i%2===1 && stable.length?stable:platforms.filter(f=>f.type==="ground");
+    const surface=candidates.reduce((best,f)=>Math.abs(f.x+f.w/2-target)<Math.abs(best.x+best.w/2-target)?f:best);
+    // Bottom of the chest is level with the top of its supporting surface.
+    const chestX=surface.type==="ground"?Math.max(surface.x+2,Math.min(target,surface.x+surface.w-2)):
+      surface.x+Math.floor(surface.w/2)-.5;
+    return {x:chestX,y:surface.y-1,locked:i%2===1,opened:false};
+  });
+  // The key sits along the upper approach to its chained chest.
+  const keys=chests.filter(c=>c.locked).map(c=>({x:c.x-3,y:level<=3?Math.max(4.2,c.y-1.25):c.y-1.25,taken:false}));
+  const ladders=elevated.filter((_,i)=>i%3===0).map(f=>({x:f.x+1,y:f.y,bottom:mainY}));
+  if(level<=3)ladders.push({x:13.5,y:mainY,bottom:14});
+  const upperCoins=Array.from({length:16},(_,i)=>({x:5+i*Math.max(4,Math.floor((def.length-12)/16)),y:mainY-4+(i%3)})).filter(c=>c.x<def.length-5);
+  if(level<=3)upperCoins.push({x:11,y:12.2},{x:26,y:12.2});
+  return {...def,layoutVersion:3,mainY,platforms,enemies,chests,keys,ladders,
+    coins:upperCoins,
+    traps,secret:{x:level<=3?10:def.layout==="vertical"?21:11,y:level<=3?12.1:def.layout==="vertical"?10:11},
+    checkpoint:{x:Math.floor(def.length*.52),y:mainY-2}};
 }
