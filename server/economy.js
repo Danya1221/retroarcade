@@ -1,5 +1,6 @@
 import { catalog } from "./catalog.js";
 import { randomInt } from "node:crypto";
+import { activeMissions } from "../shared/missions.js";
 import {
   skins,
   defaultConfig,
@@ -126,7 +127,7 @@ export async function reward(c, u, s, settings) {
     secrets: st.secrets,
     platformer: s.game === "platformer" && st.won ? 1 : 0,
   };
-  for (const ch of (await catalog(c)).challenges) {
+  for (const ch of activeMissions((await catalog(c)).challenges)) {
     const n = metrics[ch.metric];
     if (n)
       await c.query(

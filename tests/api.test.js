@@ -130,6 +130,22 @@ test("transactional API integration", async (t) => {
       call("/api/challenges/claim", { id: "daily-snake" }),
     );
   });
+  await t.test("generated missions appear and claiming one is idempotent", async () => {
+    const missions = await call("/api/challenges");
+    assert.equal(missions.length, 9);
+    assert.equal(missions.filter((m) => m.id.startsWith("generated-day-")).length, 3);
+    const target = missions.find((m) => m.id === "generated-day-1");
+    assert.equal(target.period, "day");
+    await pool.query(
+      "INSERT INTO challenge_progress(user_id,challenge,period,value) VALUES(1,$1,CURRENT_DATE,$2) ON CONFLICT(user_id,challenge,period) DO UPDATE SET value=$2",
+      [target.id, target.target],
+    );
+    const before = (await call("/api/me")).user.shards;
+    await call("/api/challenges/claim", { id: target.id });
+    assert.equal((await call("/api/me")).user.shards, before + target.shards);
+    assert.equal((await call("/api/challenges")).find((m) => m.id === target.id).claimed, true);
+    await assert.rejects(() => call("/api/challenges/claim", { id: target.id }));
+  });
   await t.test(
     "leaderboard, daily seed and admin queries execute",
     async () => {

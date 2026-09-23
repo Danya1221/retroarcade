@@ -5,6 +5,7 @@ import { generate, validate, reachable } from "../games/maze/generator.js";
 import { createGame, tick, replay } from "../shared/engine.js";
 import { rollLoot } from "../server/economy.js";
 import { defaultConfig } from "../shared/content.js";
+import { activeMissions } from "../shared/missions.js";
 import { validateTelegram } from "../server/auth.js";
 import { createHmac } from "node:crypto";
 import { headPose, snakeSpine, visualHeading } from "../web/snake-art.js";
@@ -50,6 +51,14 @@ test("snake cannot reverse into itself", () => {
   for (let i = 0; i < 9; i++) tick(s, 8);
   assert.equal(s.dir, 1);
   assert.equal(s.over, false);
+});
+test("mission rotation is stable during a day and week", () => {
+  const builtIn = [{ id: "daily-snake", period: "day", metric: "snake", target: 3 }];
+  const monday = activeMissions(builtIn, new Date("2026-09-21T01:00:00Z"));
+  const tuesday = activeMissions(builtIn, new Date("2026-09-22T01:00:00Z"));
+  assert.equal(monday.length, 6);
+  assert.deepEqual(monday.filter((m) => m.period === "week"), tuesday.filter((m) => m.period === "week"));
+  assert.notDeepEqual(monday.filter((m) => m.period === "day"), tuesday.filter((m) => m.period === "day"));
 });
 test("maze locked exit requires key", () => {
   const s = createGame("maze", "door"),

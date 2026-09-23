@@ -34,6 +34,8 @@ const names = {
   games: "АРКАДА",
   leaderboard: "РЕЙТИНГ",
   challenges: "ИСПЫТАНИЯ",
+  inventory: "ИНВЕНТАРЬ",
+  achievements: "ДОСТИЖЕНИЯ",
   cases: "КЕЙСЫ",
   collection: "СКИНЫ",
   profile: "ПРОФИЛЬ",
@@ -102,7 +104,9 @@ function playerBar() {
   return `<header class="reference-playerbar"><button id="profile-card" class="reference-player"><span class="reference-avatar">${esc(u.name.slice(0,2))}</span><span><b>${esc(u.name)}</b><small>★ LV. ${u.level}</small><progress max="${u.xpNext-u.xpFloor}" value="${u.xp-u.xpFloor}" aria-label="Опыт"></progress></span></button><div class="reference-wallet"><button id="coin-shop" aria-label="Магазин сундуков"><span class="pixel-coin"></span><b>${Number(u.coins||0).toLocaleString('ru-RU')}</b><span class="wallet-plus">+</span></button><button id="home-settings" aria-label="Настройки">⚙</button></div></header>`;
 }
 function roomNav(selected = view) {
-  return `<nav class="reference-nav" aria-label="Навигация меню">${[['games','HOME','home'],['leaderboard','LEADERBOARD','leaderboard'],['collection','COLLECTION','collection'],['cases','CASES','cases'],['profile','PROFILE','profile']].map(([dest,label,icon])=>`<button data-dest="${dest}" class="${dest===selected?'active':''}"><i class="nav-sprite" aria-hidden="true"><img src="/assets/retro-ui/nav/${icon}.webp" alt=""></i><span>${label}</span></button>`).join('')}</nav>`;
+  if (selected === 'inventory') selected = 'collection';
+  if (selected === 'achievements') selected = 'profile';
+  return `<nav class="reference-nav" aria-label="Навигация меню">${[['games','HOME','home'],['leaderboard','SCORES','leaderboard'],['collection','SKINS','collection'],['challenges','MISSIONS','missions'],['cases','CASES','cases'],['profile','PROFILE','profile']].map(([dest,label,icon])=>`<button data-dest="${dest}" class="${dest===selected?'active':''}"><i class="nav-sprite" aria-hidden="true"><img src="/assets/retro-ui/nav/${icon}.webp" alt=""></i><span>${label}</span></button>`).join('')}</nav>`;
 }
 function shell() {
   const home = view === "games";
@@ -121,6 +125,8 @@ async function navigate(next = "games") {
     if (next === "games") hub();
     if (next === "cases") cases();
     if (next === "collection") collection();
+    if (next === "inventory") inventoryPage();
+    if (next === "achievements") achievementsPage();
     if (next === "profile") profile();
     if (next === "settings") preferences();
     if (next === "leaderboard") await leaderboard();
@@ -141,14 +147,14 @@ function hub() {
     <div class="reference-logo"><img src="/assets/retro-ui/IMG_9417.png" alt="Retro Arcade — Play Collect Compete"></div>
     ${data.active?`<div class="notice row"><span>Сохранённый забег · ${esc(data.active.game)}</span><button id="resume">Продолжить</button><button id="abandon">Завершить</button></div>`:''}
     <div class="reference-content"><div class="reference-grid">${cards.map((g,i)=>`<button class="reference-card" data-play="${g.id}" style="--col:${i%3};--row:${Math.floor(i/3)};--edge:${g.color||'#879db8'}" ${g.enabled?'':'disabled'}><span class="reference-cover"></span><b>${labels[g.id]}</b><small>${g.id==='platformer'?'LV '+Math.min(9,data.user.progress):'BEST '+(data.user.stats['best-'+g.id]||0)}</small></button>`).join('')}<button class="reference-card" id="more-games" style="--col:2;--row:1;--edge:#8993a2"><span class="reference-cover"></span><b>MORE GAMES</b></button></div>
-    <aside class="reference-shortcuts"><button data-dest="collection"><span class="shortcut-art inventory-art"></span><span>INVENTORY</span></button><button data-dest="profile"><span class="shortcut-art trophy-art"></span><span>ACHIEVEMENTS</span></button><button data-dest="cases"><span class="shortcut-art shop-art"></span><span>SHOP</span></button><button data-dest="challenges"><span class="shortcut-art tasks-art"></span><span>DAILY TASKS</span></button></aside></div>
+    <aside class="reference-shortcuts"><button data-dest="inventory"><img class="shortcut-icon" src="/assets/retro-ui/nav/cases.webp" alt=""><span>INVENTORY</span></button><button data-dest="achievements"><img class="shortcut-icon" src="/assets/retro-ui/nav/leaderboard.webp" alt=""><span>ACHIEVEMENTS</span></button><button data-dest="cases"><img class="shortcut-icon" src="/assets/loot/arcade.webp" alt=""><span>SHOP</span></button><button data-dest="challenges"><img class="shortcut-icon" src="/assets/retro-ui/nav/missions.webp" alt=""><span>MISSIONS</span></button></aside></div>
     <button class="reference-loot" id="loot-banner"><span class="loot-sprite"><img src="/assets/loot/arcade.webp" alt="Аркадный сундук"></span><span><b>RANDOM LOOTBOX</b><small>Сундуки и новые скины</small></span><strong>›</strong></button>
     ${roomNav('games')}
     ${data.user.admin?'<button class="reference-admin" data-dest="admin">ADMIN</button>':''}
   </section>`;
   bind('[data-dest]',el=>navigate(el.dataset.dest));
   bind('[data-play]',el=>['racer','tanks'].includes(el.dataset.play)?multiplayerChoice(el.dataset.play):start(el.dataset.play));
-  $('#more-games').onclick=()=>{const d=modal('<h2>Больше игр</h2><div class="stack">'+data.games.filter(g=>!order.includes(g.id)).map(g=>`<button data-extra="${g.id}" ${g.enabled?'':'disabled'}>${esc(g.name)}</button>`).join('')+'<button id="daily-maze">DAILY MAZE</button><button id="extra-close">Назад</button></div>');$('#extra-close').onclick=()=>d.close();bind('[data-extra]',async el=>{d.close();await start(el.dataset.extra)});$('#daily-maze').onclick=()=>{d.close();start('maze',1,true)};};
+  $('#more-games').onclick=()=>{const extras=data.games.filter(g=>!order.includes(g.id));const d=modal(`<div class="more-games-modal"><div class="eyebrow">EXTRA ARCADE</div><h2>Больше игр</h2><div class="extra-games">${extras.map(g=>`<button data-extra="${g.id}" ${g.enabled?'':'disabled'}><img src="/assets/retro-ui/extra/${g.id}.webp" alt=""><span><b>${esc(g.name)}</b><small>НАЧАТЬ ИГРУ ›</small></span></button>`).join('')}<button id="daily-maze"><img src="/assets/retro-ui/extra/daily.webp" alt=""><span><b>DAILY MAZE</b><small>НОВЫЙ ЛАБИРИНТ КАЖДЫЙ ДЕНЬ ›</small></span></button></div><button id="extra-close">‹ Вернуться в аркаду</button></div>`);$('#extra-close').onclick=()=>d.close();bind('[data-extra]',async el=>{d.close();await start(el.dataset.extra)});$('#daily-maze').onclick=()=>{d.close();start('maze',1,true)};};
   $('#profile-card').onclick=()=>navigate('profile');$('#home-settings').onclick=()=>navigate('settings');$('#coin-shop').onclick=$('#loot-banner').onclick=()=>navigate('cases');
   if(data.active){$('#resume').onclick=()=>launch(data.active);bind('#abandon',async()=>{const r=await api('/session/sync',{id:data.active.id,version:data.active.version,inputs:[],finish:true});if(r.conflict)throw Error('Забег изменился. Обнови страницу');await refresh();hub();});}
 }
@@ -266,6 +272,16 @@ function collection(filter = "ALL") {
     collection(filter);
   });
 }
+function inventoryPage() {
+  const owned = data.skins.filter(s => data.owned.includes(s.id));
+  $("#page").innerHTML = `<div class="eyebrow">PLAYER STORAGE</div><h2>Инвентарь</h2><div class="inventory-actions"><button data-inventory-link="collection">Все скины ›</button><button data-inventory-link="cases">Магазин сундуков ›</button></div><h3>Мои сундуки</h3><div class="inventory-grid">${data.lootBoxes.map(box=>`<article class="panel inventory-box"><img src="/assets/loot/${box.id}.webp" alt=""><div><strong>${esc(box.name)}</strong><small>${esc(box.rarity)} · ${boxes(box.id)} ШТ.</small></div><button data-open-box="${box.id}" ${boxes(box.id)?'':'disabled'}>Открыть</button></article>`).join('')}</div><h3>Полученные скины · ${owned.length}</h3><div class="inventory-skins">${owned.map(s=>`<span style="--item-color:${s.color||'#fff'}">${esc(s.name||s.id)} <small>${esc(s.game)}</small></span>`).join('')}</div>`;
+  bind('[data-open-box]', el => openBox(el.dataset.openBox));
+  bind('[data-inventory-link]', el => navigate(el.dataset.inventoryLink));
+}
+function achievementsPage() {
+  const earned = data.achievements.filter(a => data.awards.includes(a.id)).length;
+  $("#page").innerHTML = `<div class="eyebrow">TROPHY ROOM</div><h2>Достижения</h2><p class="muted">Открыто ${earned} из ${data.achievements.length}</p><div class="achievement-grid">${data.achievements.map(a=>`<article class="panel achievement-card ${data.awards.includes(a.id)?'unlocked':''}"><img src="/assets/retro-ui/nav/leaderboard.webp" alt=""><div><strong>${esc(a.name||'???')}</strong><small>${esc(a.description||'Сигнал ещё не расшифрован')}</small></div><span>${data.awards.includes(a.id)?'ОТКРЫТО':'ЗАКРЫТО'}</span></article>`).join('')}</div>`;
+}
 async function openBox(type = "arcade") {
   let pending;
   try { pending = JSON.parse(localStorage.getItem("pending-loot")); } catch { pending = localStorage.getItem("pending-loot"); }
@@ -301,14 +317,15 @@ async function leaderboard(game = "snake", period = "all") {
   bind("[data-board]", (el) => leaderboard(el.dataset.board, period));
   bind("[data-period]", (el) => leaderboard(game, el.dataset.period));
 }
-async function challengePage() {
+async function challengePage(period = 'all') {
   const list = await api("/challenges");
-  $("#page").innerHTML =
-    `<div class="eyebrow">ЕЩЁ ОДИН ПОВОД ВЕРНУТЬСЯ</div><h2>Испытания</h2><div class="stack">${list.map((ch) => `<article class="panel row"><div><div class="eyebrow">${ch.period === "day" ? "DAILY" : "WEEKLY"}</div><h3 style="margin:12px 0">${ch.name}</h3><span class="muted">${Math.min(ch.value || 0, ch.target)} / ${ch.target} · ${ch.xp} XP · ◈ ${ch.shards}${ch.box ? " · ▣ Картридж" : ""}</span></div><button data-claim="${ch.id}" ${ch.claimed || (ch.value || 0) < ch.target ? "disabled" : ""}>${ch.claimed ? "ПОЛУЧЕНО" : "ЗАБРАТЬ"}</button></article>`).join("")}</div>`;
+  const shown = list.filter(ch => period === 'all' || ch.period === period);
+  $("#page").innerHTML = `<div class="eyebrow">ARCADE QUEST BOARD</div><h2>Миссии</h2><p class="muted">Новые задания появляются каждый день и каждую неделю. Прогресс записывается после завершения забега.</p><div class="mission-summary"><span>ВЫПОЛНЕНО <b>${list.filter(ch=>ch.value>=ch.target).length}/${list.length}</b></span><span>ОСТАЛОСЬ <b>${list.filter(ch=>!ch.claimed).length}</b></span></div><div class="filters">${[['all','ВСЕ'],['day','СЕГОДНЯ'],['week','НЕДЕЛЯ']].map(([value,label])=>`<button class="small ${period===value?'active':''}" data-mission-filter="${value}">${label}</button>`).join('')}</div><div class="mission-grid">${shown.map(ch=>`<article class="panel mission-card ${ch.claimed?'claimed':''}"><div class="mission-icon">${ch.metric==='snake'?'◈':ch.metric==='secrets'?'✧':ch.metric==='platformer'?'▣':'✦'}</div><div class="mission-copy"><small>${ch.period==='day'?'ЕЖЕДНЕВНАЯ':'ЕЖЕНЕДЕЛЬНАЯ'} · ${ch.id.startsWith('generated-')?'НОВАЯ':'АРКАДА'}</small><h3>${esc(ch.name)}</h3><div class="mission-progress"><i style="width:${Math.min(100,Math.round((ch.value||0)/ch.target*100))}%"></i></div><span>${Math.min(ch.value||0,ch.target)} / ${ch.target} · ${ch.xp} XP · ◈ ${ch.shards}${ch.box?' · СУНДУК':''}</span></div><button data-claim="${ch.id}" ${ch.claimed||(ch.value||0)<ch.target?'disabled':''}>${ch.claimed?'ПОЛУЧЕНО':'ЗАБРАТЬ'}</button></article>`).join('')}</div>`;
+  bind('[data-mission-filter]', el => challengePage(el.dataset.missionFilter));
   bind("[data-claim]", async (el) => {
     await api("/challenges/claim", { id: el.dataset.claim });
     await refresh();
-    navigate("challenges");
+    await challengePage(period);
   });
 }
 function profile() {
@@ -325,7 +342,8 @@ function profile() {
       )
       .join(
         "",
-      )}</div><button id="profile-settings">⚙ Настройки звука и графики</button><h3 style="margin-top:30px">Достижения</h3><div class="stack">${data.achievements.map((a) => `<div class="panel row"><span>${data.awards.includes(a.id) ? "✧" : "◇"} ${esc(a.name || "???")}</span><span class="muted">${esc(a.description || "Сигнал ещё не расшифрован")}</span></div>`).join("")}</div>`;
+      )}</div><div class="inventory-actions"><button id="profile-achievements">Достижения ›</button><button id="profile-settings">⚙ Настройки звука и графики</button></div>`;
+  $("#profile-achievements").onclick = () => navigate("achievements");
   $("#profile-settings").onclick = () => navigate("settings");
 }
 function preferences() {

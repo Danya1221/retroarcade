@@ -81,7 +81,20 @@ function continuousBody(c, body, z, direction) {
   const path = (points) => {
     c.beginPath();
     c.moveTo(points[0].x * z, points[0].y * z);
-    for (const p of points.slice(1)) c.lineTo(p.x * z, p.y * z);
+    for (let i = 1; i < points.length - 1; i++) {
+      const before = points[i - 1], p = points[i], after = points[i + 1];
+      const inLength = Math.hypot(p.x - before.x, p.y - before.y);
+      const outLength = Math.hypot(after.x - p.x, after.y - p.y);
+      const turn = (p.x - before.x) * (after.y - p.y) - (p.y - before.y) * (after.x - p.x);
+      if (Math.abs(turn) < 0.01 || !inLength || !outLength) {
+        c.lineTo(p.x * z, p.y * z);
+        continue;
+      }
+      const radius = Math.min(0.38, inLength * 0.42, outLength * 0.42);
+      c.lineTo((p.x - (p.x - before.x) / inLength * radius) * z, (p.y - (p.y - before.y) / inLength * radius) * z);
+      c.quadraticCurveTo(p.x * z, p.y * z, (p.x + (after.x - p.x) / outLength * radius) * z, (p.y + (after.y - p.y) / outLength * radius) * z);
+    }
+    c.lineTo(points.at(-1).x * z, points.at(-1).y * z);
   };
   c.save();
   c.lineCap = "round";
@@ -148,7 +161,7 @@ export function drawSnake(c, s, z, skin, settings) {
   continuousBody(c, body, z, direction);
   const pose = headPose(direction),
     head = body[0];
-  sprite(c, 0, head.x, head.y, z, pose.rotation, 1.2, pose.flipX);
+  sprite(c, 0, head.x, head.y, z, pose.rotation, 1.43, pose.flipX);
   c.restore();
   if (settings.lighting) {
     const g = c.createRadialGradient(

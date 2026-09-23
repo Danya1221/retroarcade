@@ -545,7 +545,8 @@
 .reference-nav button.active{background:linear-gradient(#55332280,#21172350);border-bottom:3px solid #ff9837;color:#ffd064}
 .reference-loot .loot-sprite{position:relative;display:grid;place-items:center;flex:none;width:112px;height:100px;overflow:visible}
 .reference-loot .loot-sprite img{position:static;width:100%;height:100%;object-fit:contain;max-width:100%;filter:drop-shadow(0 5px 7px #08040790)}
-.reference-nav{grid-template-columns:repeat(5,minmax(0,1fr))}
+.reference-nav{grid-template-columns:repeat(6,minmax(0,1fr))}
+.reference-shortcuts .shortcut-icon{display:block;width:46px;height:43px;object-fit:contain;image-rendering:pixelated}
 .reference-nav button{min-width:0;text-align:center;align-content:center}
 .reference-nav button .nav-sprite{display:grid;place-items:center;width:44px;height:40px;overflow:visible;background:none}
 .reference-nav button .nav-sprite img{position:static;display:block;width:38px;height:38px;max-width:100%;object-fit:contain;image-rendering:pixelated}
@@ -573,6 +574,44 @@
 .reference-page-content .skin{padding:12px;min-width:0}
 .reference-page-content .skin strong{overflow-wrap:anywhere}
 .reference-page-content .case-shop{grid-template-columns:repeat(2,minmax(0,1fr))}
+.inventory-actions{display:flex;flex-wrap:wrap;gap:10px;margin:24px 0}
+.inventory-actions button{background:#18263c;border:2px solid #b87544;color:#ffdeab;font:700 12px monospace}
+.inventory-grid,.achievement-grid,.mission-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:16px 0 28px}
+.inventory-box{display:grid;grid-template-columns:70px 1fr;align-items:center;gap:7px}
+.inventory-box img{width:70px;height:70px;object-fit:contain}
+.inventory-box strong,.achievement-card strong{display:block;color:#ffe0a3;font:800 15px monospace}
+.inventory-box small,.achievement-card small{display:block;margin-top:6px;color:#aeb8c9;font:11px monospace}
+.inventory-box button{grid-column:1/-1}
+.inventory-skins{display:flex;flex-wrap:wrap;gap:8px}
+.inventory-skins span{padding:9px 12px;border:1px solid var(--item-color);background:#0b1321;color:var(--item-color);font:700 12px monospace}
+.inventory-skins small{color:#b4b9c4}
+.achievement-card{display:grid;grid-template-columns:50px 1fr;gap:10px;align-items:center;opacity:.65}
+.achievement-card.unlocked{opacity:1;border-color:#e1a449}
+.achievement-card img{width:45px;height:45px;object-fit:contain}
+.achievement-card>span{grid-column:2;color:#f3bb6c;font:700 10px monospace}
+.mission-summary{display:flex;gap:12px;flex-wrap:wrap}
+.mission-summary span{padding:12px;border:1px solid #865d3c;background:#130e15;color:#bcb8c3;font:11px monospace}
+.mission-summary b{color:#ffd16e;font-size:16px}
+.mission-card{display:grid;grid-template-columns:46px 1fr;gap:9px;align-items:start}
+.mission-card .mission-icon{display:grid;place-items:center;width:44px;height:44px;border:2px solid #bd8451;background:#37211d;color:#ffcb72;font:25px monospace}
+.mission-copy small{color:#ffb365;font:9px monospace;letter-spacing:.05em}
+.mission-copy h3{font-size:18px;margin:8px 0}
+.mission-copy>span{font:12px monospace;color:#adb8c8}
+.mission-progress{height:9px;background:#060a13;border:1px solid #65708a;margin:10px 0 7px}
+.mission-progress i{display:block;height:100%;background:#f5a84a;box-shadow:0 0 9px #f38c3d}
+.mission-card>button{grid-column:1/-1;border-color:#d58d42!important;color:#ffd18c!important}
+.mission-card.claimed{opacity:.7}
+dialog:has(.more-games-modal){width:min(92vw,690px);max-width:690px;max-height:88dvh;overflow-y:auto;padding:18px;border:3px solid #e1a250;background:linear-gradient(145deg,#142038,#080d18);box-shadow:0 0 0 6px #050811,0 30px 80px #000b}
+.more-games-modal .eyebrow{color:#ffba64}
+.more-games-modal h2{font:900 27px monospace;color:#ffe0a7}
+.extra-games{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+.extra-games button{display:flex;align-items:center;gap:12px;text-align:left;padding:7px;border:2px solid #52648c;background:#10192b;color:#fff1dc}
+.extra-games button:hover:not(:disabled){border-color:#e6a85a;background:#1e293e}
+.extra-games button:focus-visible{outline:2px solid #ffbc6a;outline-offset:2px}
+.extra-games img{width:86px;height:86px;object-fit:cover;image-rendering:pixelated;flex:none}
+.extra-games b{display:block;font:900 15px monospace}
+.extra-games small{display:block;margin-top:8px;color:#ffbd6e;font:10px monospace}
+.more-games-modal #extra-close{display:block;width:100%;margin-top:13px;border:1px solid #b27643;background:#261b1c;color:#ffdfac;font:700 12px monospace}
 .reference-subpage .reference-nav{position:sticky;bottom:8px;z-index:12;width:100%;margin-top:auto;border-color:#b77b41;box-shadow:0 0 0 3px #080b14,0 5px 22px #000d}
 .reference-subpage .reference-admin{margin-top:0}
 .case-shop{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;max-width:none;margin-top:25px}
@@ -624,6 +663,12 @@
  .reference-page-content .stat{padding:15px}
  .reference-page-content .row{flex-wrap:wrap}
  .reference-subpage .reference-nav{position:fixed;left:0;right:0;bottom:0;width:100%;padding:5px 3px calc(5px + env(safe-area-inset-bottom,0px));border:0;border-top:2px solid #b77b41;border-radius:0;background:#080c18f5;box-shadow:0 -4px 15px #000c}
- .reference-nav button{font-size:8px;gap:1px;min-height:52px;padding:3px 0}
+ .reference-nav button{font-size:7px;gap:1px;min-height:52px;padding:3px 0}
  .reference-nav button .nav-sprite{width:39px;height:36px}
+ .reference-nav button .nav-sprite img{width:33px;height:33px}
+ .reference-shortcuts .shortcut-icon{width:35px;height:34px}
+ .inventory-grid,.achievement-grid,.mission-grid{grid-template-columns:1fr}
+ .extra-games{grid-template-columns:1fr}
+ .extra-games img{width:74px;height:74px}
+ .extra-games button{gap:10px}
 }

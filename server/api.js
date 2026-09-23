@@ -17,6 +17,7 @@ import { createGame, replay } from "../shared/engine.js";
 import { levels } from "../games/platformer/levels.js";
 import { ApiError } from "./errors.js";
 import { lootBoxes } from "../shared/loot.js";
+import { activeMissions } from "../shared/missions.js";
 export { ApiError } from "./errors.js";
 const fail = (status, msg) => {
   throw new ApiError(status, msg);
@@ -176,15 +177,15 @@ export async function api(req, path, b, q) {
         [user.id, weekKey()],
       )
     ).rows;
-    return challenges.map((ch) => ({
-      ...ch,
-      ...rows.find(
+    return activeMissions(challenges).map((ch) => {
+      const progress = rows.find(
         (r) =>
           r.challenge === ch.id &&
           dayKey(new Date(r.period)) ===
             (ch.period === "day" ? dayKey() : weekKey()),
-      ),
-    }));
+      );
+      return { ...ch, value: progress?.value || 0, claimed: Boolean(progress?.claimed) };
+    });
   }
   if (method === "POST" && path === "/api/multiplayer/create") {
     if (!["racer","tanks"].includes(b.game) || !["online","mixed"].includes(b.mode)) fail(400,"Неверный режим");
@@ -429,7 +430,7 @@ export async function api(req, path, b, q) {
     });
   }
   if (method === "POST" && path === "/api/challenges/claim") {
-    const ch = challenges.find((x) => x.id === b.id);
+    const ch = activeMissions(challenges).find((x) => x.id === b.id);
     if (!ch) fail(404, "Испытание не найдено");
     return transaction(async (c) => {
       await lockedUser(c, user.id);
