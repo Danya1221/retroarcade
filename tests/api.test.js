@@ -121,6 +121,18 @@ test("transactional API integration", async (t) => {
       call("/api/session/start", { game: "platformer", level: 9 }),
     );
   });
+  await t.test("extended campaign accepts unlocked stages and rejects stages past the finale", async () => {
+    await pool.query("UPDATE users SET progress=10 WHERE id=1");
+    const stage = await call("/api/session/start", { game: "platformer", level: 10 });
+    assert.equal(stage.state.level, 10);
+    await call("/api/session/sync", { id: stage.id, version: 0, inputs: [], finish: true });
+    await pool.query("UPDATE users SET progress=16 WHERE id=1");
+    await assert.rejects(() => call("/api/session/start", { game: "platformer", level: 16 }));
+    const finale = await call("/api/session/start", { game: "platformer", level: 15 });
+    assert.equal(finale.state.final, true);
+    await call("/api/session/sync", { id: finale.id, version: 0, inputs: [], finish: true });
+    await pool.query("UPDATE users SET progress=1 WHERE id=1");
+  });
   await t.test("challenge double claim prevented", async () => {
     await pool.query(
       "INSERT INTO challenge_progress VALUES(1,'daily-snake',CURRENT_DATE,3,false) ON CONFLICT(user_id,challenge,period) DO UPDATE SET value=3",

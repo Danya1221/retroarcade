@@ -146,7 +146,7 @@ function hub() {
     ${playerBar()}
     <div class="reference-logo"><img src="/assets/retro-ui/IMG_9417.png" alt="Retro Arcade — Play Collect Compete"></div>
     ${data.active?`<div class="notice row"><span>Сохранённый забег · ${esc(data.active.game)}</span><button id="resume">Продолжить</button><button id="abandon">Завершить</button></div>`:''}
-    <div class="reference-content"><div class="reference-grid">${cards.map((g,i)=>`<button class="reference-card" data-play="${g.id}" style="--col:${i%3};--row:${Math.floor(i/3)};--edge:${g.color||'#879db8'}" ${g.enabled?'':'disabled'}><span class="reference-cover"></span><b>${labels[g.id]}</b><small>${g.id==='platformer'?'LV '+Math.min(9,data.user.progress):'BEST '+(data.user.stats['best-'+g.id]||0)}</small></button>`).join('')}<button class="reference-card" id="more-games" style="--col:2;--row:1;--edge:#8993a2"><span class="reference-cover"></span><b>MORE GAMES</b></button></div>
+    <div class="reference-content"><div class="reference-grid">${cards.map((g,i)=>`<button class="reference-card" data-play="${g.id}" style="--col:${i%3};--row:${Math.floor(i/3)};--edge:${g.color||'#879db8'}" ${g.enabled?'':'disabled'}><span class="reference-cover"></span><b>${labels[g.id]}</b><small>${g.id==='platformer'?'LV '+Math.min(data.levels.length,data.user.progress):'BEST '+(data.user.stats['best-'+g.id]||0)}</small></button>`).join('')}<button class="reference-card" id="more-games" style="--col:2;--row:1;--edge:#8993a2"><span class="reference-cover"></span><b>MORE GAMES</b></button></div>
     <aside class="reference-shortcuts"><button data-dest="inventory"><img class="shortcut-icon" src="/assets/retro-ui/nav/cases.webp" alt=""><span>INVENTORY</span></button><button data-dest="achievements"><img class="shortcut-icon" src="/assets/retro-ui/nav/leaderboard.webp" alt=""><span>ACHIEVEMENTS</span></button><button data-dest="cases"><img class="shortcut-icon" src="/assets/loot/arcade.webp" alt=""><span>SHOP</span></button><button data-dest="challenges"><img class="shortcut-icon" src="/assets/retro-ui/nav/missions.webp" alt=""><span>MISSIONS</span></button></aside></div>
     <button class="reference-loot" id="loot-banner"><span class="loot-sprite"><img src="/assets/loot/arcade.webp" alt="Аркадный сундук"></span><span><b>RANDOM LOOTBOX</b><small>Сундуки и новые скины</small></span><strong>›</strong></button>
     ${roomNav('games')}
@@ -191,7 +191,7 @@ async function showRoom(room,host,d){
 }
 function levelSelect() {
   const d = modal(
-    `<div class="eyebrow">AFTERLIGHT / CAMPAIGN</div><h2>За краем экрана</h2><p class="muted">Три мира. Девять уровней. Один последний передатчик.</p><div class="level-grid">${data.levels.map((l) => `<button data-level="${l.id}" ${l.id > data.user.progress ? "disabled" : ""}>${l.id > data.user.progress ? "🔒" : "▶"} ${l.id}. ${esc(l.name)}<small>МИР ${l.world + 1}${l.final ? " · ФИНАЛ" : l.boss ? " · МИНИ-БОСС" : ""}</small></button>`).join("")}</div><div class="actions"><button id="close-levels">Назад</button></div>`,
+    `<div class="eyebrow">AFTERLIGHT / CAMPAIGN</div><h2>За краем экрана</h2><p class="muted">Четыре мира. ${data.levels.length} уровней. Найди ключи от сундуков в цепях и следуй за потерянным сигналом.</p><div class="level-grid">${data.levels.map((l) => `<button data-level="${l.id}" ${l.id > data.user.progress ? "disabled" : ""}>${l.id > data.user.progress ? "🔒" : "▶"} ${l.id}. ${esc(l.name)}<small>МИР ${l.world + 1}${l.final ? " · ФИНАЛ" : l.boss ? " · МИНИ-БОСС" : ""}</small>${l.id <= data.user.progress ? `<small>${esc(l.story)}</small>` : ""}</button>`).join("")}</div><div class="actions"><button id="close-levels">Назад</button></div>`,
   );
   $("#close-levels").onclick = () => d.close();
   bind("[data-level]", async (el) => {
@@ -220,9 +220,10 @@ async function launch(session, multiplayer = null) {
       await refresh();
       await navigate();
       const finale =
-        result.won && result.game === "platformer" && result.level === 9;
+        result.won && result.game === "platformer" && result.level === data.levels.length;
+      const chapter = data.levels.find((l) => l.id === result.level);
       const d = modal(
-        `<div class="eyebrow">${finale ? "END OF TRANSMISSION" : result.won ? "LEVEL COMPLETE" : "RUN COMPLETE"}</div><h2>${finale ? "Сигнал снова звучит." : result.won ? "Ты нашёл выход." : "Ещё одна попытка?"}</h2>${finale ? '<p class="muted">Старый передатчик ожил. За пустыми экранами снова зажглись огни. Но в помехах остались голоса, которых ты ещё не слышал…</p>' : ""}<div class="stats"><div class="stat"><strong>${result.score}</strong><span>ОЧКИ</span></div><div class="stat"><strong>+${result.xp}</strong><span>XP</span></div></div><p class="muted">${result.newRecord ? "✧ НОВЫЙ РЕКОРД · " : ""}Секреты: ${result.secrets} · Картриджи: ${result.boxes}</p>${result.achievements.map((a) => `<p>✧ ${esc(a)}</p>`).join("")}<div class="actions"><button id="again" class="primary">${result.won && result.game === "platformer" && result.level < 9 ? "Следующий уровень" : "Ещё раз"}</button><button id="result-close">В меню</button></div>`,
+        `<div class="eyebrow">${finale ? "END OF TRANSMISSION" : result.won ? "LEVEL COMPLETE" : "RUN COMPLETE"}</div><h2>${finale ? "Сигнал снова звучит." : result.won ? "Ты нашёл выход." : "Ещё одна попытка?"}</h2>${result.won && chapter ? `<p class="muted">${esc(chapter.story)}</p>` : ""}<div class="stats"><div class="stat"><strong>${result.score}</strong><span>ОЧКИ</span></div><div class="stat"><strong>+${result.xp}</strong><span>XP</span></div></div><p class="muted">${result.newRecord ? "✧ НОВЫЙ РЕКОРД · " : ""}Секреты: ${result.secrets} · Картриджи: ${result.boxes}</p>${result.achievements.map((a) => `<p>✧ ${esc(a)}</p>`).join("")}<div class="actions"><button id="again" class="primary">${result.won && result.game === "platformer" && result.level < data.levels.length ? "Следующий уровень" : "Ещё раз"}</button><button id="result-close">В меню</button></div>`,
       );
       $("#result-close").onclick = () => d.close();
       bind("#again", async () => {
@@ -231,7 +232,7 @@ async function launch(session, multiplayer = null) {
           await api("/session/start", {
             game: result.game,
             level:
-              result.won && result.level < 9 ? result.level + 1 : result.level,
+              result.won && result.game === "platformer" && result.level < data.levels.length ? result.level + 1 : result.level,
           }),
         );
       });

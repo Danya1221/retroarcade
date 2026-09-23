@@ -21,7 +21,7 @@ export const games = [
     id: "platformer",
     name: "AFTERLIGHT",
     tag: "PLATFORMER",
-    description: "Три мира за краем старого экрана.",
+    description: "Четыре мира за краем старого экрана.",
     color: "#ffbd76",
   },
 ];
@@ -43,6 +43,12 @@ export const worlds = [
     sky: "#321f32",
     tile: "#83525b",
     accent: "#ffbd76",
+  },
+  {
+    name: "Рассветная долина",
+    sky: "#328bd0",
+    tile: "#aa7654",
+    accent: "#9bfa63",
   },
 ];
 export const skins = [

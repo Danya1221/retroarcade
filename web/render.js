@@ -1,5 +1,9 @@
 import {drawSnake} from "./snake-art.js";
 import { worlds } from "/shared/content.js";
+const platformArt = typeof Image === "undefined" ? {} : Object.fromEntries(
+  [["valley", "/assets/platformer/valley.webp"], ["terrain", "/assets/platformer/grass-stone.webp"], ["chest", "/assets/platformer/chest.webp"]]
+    .map(([name, path]) => { const image = new Image(); image.src = path; return [name, image]; }),
+);
 export function setupCanvas(canvas, w = 768, h = 544) {
   canvas.width = w;
   canvas.height = h;
@@ -49,6 +53,32 @@ function gem(c,x,y,z,color){
   c.save();c.shadowColor=color;c.shadowBlur=z*.28;c.fillStyle=g;c.beginPath();
   c.moveTo(cx,cy-z*.5);c.lineTo(cx+z*.42,cy-z*.08);c.lineTo(cx+z*.25,cy+z*.42);c.lineTo(cx-z*.25,cy+z*.42);c.lineTo(cx-z*.42,cy-z*.08);c.closePath();c.fill();c.restore();
   c.strokeStyle="#ffffff55";c.lineWidth=Math.max(1,z*.035);c.stroke();
+}
+function drawChest(c, chest, z) {
+  const x=chest.x*z,y=chest.y*z,w=z*1.05;
+  c.save();c.shadowColor="#0009";c.shadowBlur=z*.15;
+  if (!chest.opened && platformArt.chest?.complete && platformArt.chest.naturalWidth) {
+    c.imageSmoothingEnabled=false;
+    c.drawImage(platformArt.chest,x,y-z*.12,w,z);
+  } else {
+    rect(c,x,y+z*.19,w,z*.62,chest.opened?"#4a3730":"#7e3d29");
+    rect(c,x+z*.07,y+z*.22,w-z*.14,z*.13,chest.opened?"#765e45":"#e6983f");
+    rect(c,x+z*.08,y+z*.61,w-z*.16,z*.13,chest.opened?"#604a38":"#d98133");
+    rect(c,x+z*.39,y+z*.3,z*.22,z*.32,chest.opened?"#514335":"#ffd35f");
+  }
+  if (chest.opened)
+    rect(c,x+z*.08,y-z*.08,w-z*.16,z*.22,"#9a5734");
+  else if (!(platformArt.chest?.complete && platformArt.chest.naturalWidth)) {
+    rect(c,x+z*.05,y,w-z*.1,z*.22,"#a45130");
+    rect(c,x+z*.12,y-z*.08,w-z*.24,z*.12,"#eeac52");
+  }
+  if (chest.locked && !chest.opened) {
+    c.strokeStyle="#c0c7d1";c.lineWidth=Math.max(2,z*.13);
+    c.beginPath();c.moveTo(x+z*.12,y+z*.06);c.lineTo(x+w-z*.12,y+z*.76);
+    c.moveTo(x+w-z*.12,y+z*.06);c.lineTo(x+z*.12,y+z*.76);c.stroke();
+    rect(c,x+z*.42,y+z*.33,z*.2,z*.22,"#fbd36a");
+  }
+  c.restore();
 }
 function background(c, w, h, color, t = 0) {
   const g = c.createLinearGradient(0, 0, 0, h);
@@ -269,18 +299,39 @@ export function render(c, s, color = "#bdff70", settings = {}, skin = {}) {
   }
   if (s.game === "platformer") {
     const camera = Math.max(0, Math.min(s.length - 24, s.player.x - 8));
+    const valley=platformArt.valley, terrain=platformArt.terrain;
+    const grassWorld=s.world===0 || s.world===3;
+    if (grassWorld && valley?.complete && valley.naturalWidth) {
+      const sourceW=Math.min(valley.width,valley.height*24/17);
+      const sourceX=Math.min(valley.width-sourceW,camera/Math.max(1,s.length-24)*(valley.width-sourceW));
+      c.drawImage(valley,sourceX,0,sourceW,valley.height,0,0,24*z,17*z);
+      if (s.world===3) rect(c,0,0,24*z,17*z,"#ffd58514");
+    }
     c.save();
     c.translate(-camera * z, 0);
     for (const f of s.platforms) {
       if (f.type === "falling" && f.trigger && s.tick - f.trigger > 22) continue;
       if (f.type === "vanish" && Math.floor(s.tick / 45) % 2) continue;
       for (let i = 0; i < f.w; i++) {
-        tile(c, (f.x + i) * z, f.y * z, z, skin.terrain || worlds[s.world].tile, 1);
-        rect(c, (f.x + i) * z, f.y * z, z, 4, worlds[s.world].accent);
+        if (grassWorld && terrain?.complete && terrain.naturalWidth) {
+          c.imageSmoothingEnabled=false;
+          c.drawImage(terrain,(f.x+i)*z,f.y*z,z,z);
+        } else {
+          tile(c, (f.x + i) * z, f.y * z, z, skin.terrain || worlds[s.world].tile, 1);
+          rect(c, (f.x + i) * z, f.y * z, z, 4, worlds[s.world].accent);
+        }
         if (f.type === "ground")
           for (let j = 1; j < 4; j++)
-            tile(c, (f.x + i) * z, (f.y + j) * z, z, "#30303c");
+            if (grassWorld && terrain?.complete && terrain.naturalWidth)
+              c.drawImage(terrain,0,32,128,96,(f.x+i)*z,(f.y+j)*z,z,z);
+            else tile(c, (f.x + i) * z, (f.y + j) * z, z, "#30303c");
       }
+    }
+    for (const chest of s.chests || []) drawChest(c,chest,z);
+    for (const key of s.keys || []) if (!key.taken) {
+      const x=(key.x+.45)*z,y=(key.y+.45+Math.sin(s.tick/13)*.08)*z;
+      c.save();c.shadowColor="#ffd16b";c.shadowBlur=z*.5;c.strokeStyle="#ffe188";c.lineWidth=Math.max(2,z*.15);
+      c.beginPath();c.arc(x-z*.14,y-z*.1,z*.2,0,Math.PI*2);c.moveTo(x,y+z*.04);c.lineTo(x+z*.32,y+z*.32);c.lineTo(x+z*.32,y+z*.17);c.stroke();c.restore();
     }
     for (const t of s.traps) {
       const phase=s.tick%120, on=t.type==="spikes"||(t.type==="laser"&&phase<48)||(t.type==="crusher"&&phase>65)||(t.type==="fire"&&phase>22&&phase<72)||(t.type==="pendulum"&&Math.abs(Math.sin(s.tick/20))>.45);

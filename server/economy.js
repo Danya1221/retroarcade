@@ -1,6 +1,7 @@
 import { catalog } from "./catalog.js";
 import { randomInt } from "node:crypto";
 import { activeMissions } from "../shared/missions.js";
+import { levels } from "../games/platformer/levels.js";
 import {
   skins,
   defaultConfig,
@@ -61,7 +62,7 @@ export async function reward(c, u, s, settings) {
   u.stats[s.game] = (u.stats[s.game] || 0) + 1;
   u.stats.secrets = (u.stats.secrets || 0) + st.secrets;
   if (st.won && s.game === "platformer")
-    u.progress = Math.max(u.progress, Math.min(10, s.level + 1));
+    u.progress = Math.max(u.progress, Math.min(levels.length + 1, s.level + 1));
   const newAchievements = [];
   for (const [yes, id] of [
     [true, "first"],

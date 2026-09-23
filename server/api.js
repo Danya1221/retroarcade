@@ -284,7 +284,7 @@ export async function api(req, path, b, q) {
       if (
         !Number.isInteger(level) ||
         level < 1 ||
-        level > 9 ||
+        level > levels.length ||
         level > u.progress
       )
         fail(403, "Уровень ещё закрыт");

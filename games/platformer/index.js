@@ -5,6 +5,7 @@ export function init(s) {
     height: 17,
     player: { x: 2, y: 12, vx: 0, vy: 0 },
     hp: 4,
+    keysHeld: 0,
     ground: false,
     jumpWas: false,
     invulnerable: 0,
@@ -47,6 +48,19 @@ export function step(s, input) {
   p.vy = Math.min(p.vy + 0.024, 0.6);
   p.x = Math.max(0, Math.min(s.length - 1, p.x + p.vx));
   p.y += p.vy;
+  // Treasure chests are struck from underneath. A chained chest stays shut
+  // until the player has found a key on an earlier side route.
+  for (const chest of s.chests || []) {
+    if (chest.opened || p.vy >= 0 || p.x + 0.7 <= chest.x || p.x >= chest.x + 1 ||
+        oldY < chest.y + 0.9 || p.y > chest.y + 0.9) continue;
+    if (chest.locked && !s.keysHeld) continue;
+    if (chest.locked) s.keysHeld--;
+    chest.opened = true;
+    s.score += chest.locked ? 180 : 80;
+    if (chest.locked) s.boxes++;
+    else if (s.hp < 4 && s.chests.indexOf(chest) % 3 === 0) s.hp++;
+    p.vy = 0.05;
+  }
   s.ground = false;
   for (const f of s.platforms) {
     if (f.type === "moving") f.x = f.baseX + Math.sin(s.tick / 45) * 1.3;
@@ -80,6 +94,12 @@ export function step(s, input) {
     s.spawn = { ...s.checkpoint };
     s.score += 50;
   }
+  for (const key of s.keys || [])
+    if (!key.taken && Math.abs(key.x - p.x) < 0.85 && Math.abs(key.y - p.y) < 1.2) {
+      key.taken = true;
+      s.keysHeld++;
+      s.score += 25;
+    }
   for (const c of s.coins)
     if (!c.taken && Math.abs(c.x - p.x) < 0.9 && Math.abs(c.y - p.y) < 1.2) {
       c.taken = true;

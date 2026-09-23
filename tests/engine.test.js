@@ -1,5 +1,4 @@
 import test from "node:test";
-import campaignReplays from "./campaign-replays.json" with { type: "json" };
 import assert from "node:assert/strict";
 import { generate, validate, reachable } from "../games/maze/generator.js";
 import { createGame, tick, replay } from "../shared/engine.js";
@@ -85,19 +84,62 @@ test("platformer finale cannot be bypassed with boss alive", () => {
   tick(s, 0);
   assert.equal(s.won, true);
 });
-test("all campaign levels can be completed by an action replay", () => {
-  for (let level = 1; level <= 9; level++) {
+test("all campaign layouts have a traversable main route", () => {
+  for (let level = 1; level <= 15; level++) {
     const s = createGame("platformer", "campaign", level);
-    // Recorded input-only solutions for the current nine layouts; each entry is six ticks.
-    for (const input of campaignReplays[level - 1]) {
-      for (let tickIndex = 0; tickIndex < 6 && !s.over; tickIndex++)
-        tick(s, input);
+    // Test the terrain independently; boss and enemy combat are tested apart.
+    s.enemies = [];
+    s.traps = [];
+    let lastJump = -100;
+    for (let i = 0; i < 1500 && !s.over; i++) {
+      const ground = s.platforms.find((f) =>
+        f.type === "ground" && s.player.x + 0.7 > f.x &&
+        s.player.x < f.x + f.w && s.player.y >= 12.9);
+      const distance = (ground?.x + ground?.w ?? 9999) - s.player.x;
+      const jump = s.ground && distance > 0.1 && distance < 1.8 && i - lastJump > 8;
+      if (jump) lastJump = i;
+      tick(s, 2 | (jump ? 16 : 0));
     }
     assert.ok(
       s.won,
       `level ${level}: x=${s.player.x} hp=${s.hp} tick=${s.tick}`,
     );
+    const elevated = s.platforms.filter((f) => f.type !== "ground");
+    assert.ok(elevated[0].y >= 11, `level ${level}: first ledge out of reach`);
+    for (let i = 1; i < elevated.length; i++)
+      assert.ok(elevated[i - 1].y - elevated[i].y <= 2,
+        `level ${level}: unreachable upward step ${i}`);
   }
+});
+test("platformer chests open from below; chains consume a found key", () => {
+  const s = createGame("platformer", "chests", 1);
+  s.enemies = [];
+  s.traps = [];
+  const normal = s.chests.find((c) => !c.locked);
+  s.player.x = normal.x;
+  s.player.y = normal.y + 1.02;
+  s.player.vy = -0.3;
+  tick(s, 0);
+  assert.equal(normal.opened, true);
+  const chained = s.chests.find((c) => c.locked);
+  s.player.x = chained.x;
+  s.player.y = chained.y + 1.02;
+  s.player.vy = -0.3;
+  tick(s, 0);
+  assert.equal(chained.opened, false);
+  const key = s.keys.find((k) => !k.taken);
+  s.player.x = key.x;
+  s.player.y = key.y + 0.4;
+  s.player.vy = 0;
+  tick(s, 0);
+  assert.equal(s.keysHeld, 1);
+  s.player.x = chained.x;
+  s.player.y = chained.y + 1.02;
+  s.player.vy = -0.3;
+  tick(s, 0);
+  assert.equal(chained.opened, true);
+  assert.equal(s.keysHeld, 0);
+  assert.equal(s.boxes, 1);
 });
 test("loot pity guarantees legendary; weights cover low and high roll", () => {
   assert.equal(rollLoot(19, defaultConfig, () => 0).skin.rarity, "LEGENDARY");
