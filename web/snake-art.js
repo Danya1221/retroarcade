@@ -161,7 +161,15 @@ export function drawSnake(c, s, z, skin, settings) {
   continuousBody(c, body, z, direction);
   const pose = headPose(direction),
     head = body[0];
-  sprite(c, 0, head.x, head.y, z, pose.rotation, 1.43, pose.flipX);
+  // The artwork has a pale throat at its back. Overlap the first body segment
+  // with the larger head so that throat blends into the continuous spine.
+  const overlap = [
+    { x: 0, y: 0.32 },
+    { x: -0.32, y: 0 },
+    { x: 0, y: -0.32 },
+    { x: 0.32, y: 0 },
+  ][direction];
+  sprite(c, 0, head.x + overlap.x, head.y + overlap.y, z, pose.rotation, 2.25, pose.flipX);
   c.restore();
   if (settings.lighting) {
     const g = c.createRadialGradient(
