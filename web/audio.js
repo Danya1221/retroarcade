@@ -1,6 +1,10 @@
 let context,
   loop,
   t = 0;
+let warpedUntil = 0;
+export function warpMusic(seconds = 4) {
+  warpedUntil = Date.now() + seconds * 1000;
+}
 const notes = [130.81, 164.81, 196, 261.63, 220, 196, 164.81, 146.83];
 export function sound(type, settings) {
   if (!settings.sfx) return;
@@ -35,8 +39,9 @@ export function music(settings) {
       if (context.state !== "running") return;
       const o = context.createOscillator(),
         g = context.createGain();
-      o.type = "triangle";
-      o.frequency.value = notes[t++ % notes.length];
+      const warped=Date.now()<warpedUntil;
+      o.type = warped ? "sawtooth" : "triangle";
+      o.frequency.value = notes[t++ % notes.length] * (warped ? (t%3===0?.73:1.13) : 1);
       g.gain.setValueAtTime(
         (settings.volume ?? 0.3) * 0.07,
         context.currentTime,

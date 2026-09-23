@@ -141,6 +141,30 @@ test("platformer chests open from below; chains consume a found key", () => {
   assert.equal(s.keysHeld, 0);
   assert.equal(s.boxes, 1);
 });
+test("Green Hills theft happens during play and ladder climbs toward the first ledge", () => {
+  const s = createGame("platformer", "green-hills", 1);
+  s.enemies = [];
+  s.traps = [];
+  assert.equal(s.medallionLost, false);
+  s.player.x = 31.2;
+  tick(s, 2);
+  assert.equal(s.storyIndex, 1);
+  assert.match(s.storyCue.line, /Небо/);
+  s.player.x = 37.2;
+  tick(s, 2);
+  assert.equal(s.storyIndex, 2);
+  assert.equal(s.medallionLost, true);
+  const resumed = JSON.parse(JSON.stringify(s));
+  for (let i = 0; i < 105; i++) tick(resumed, 0);
+  assert.notEqual(resumed.storyCue?.line, s.storyCue.line);
+  const climb = createGame("platformer", "ladder", 1);
+  const ladder = climb.ladders[0];
+  climb.player.x = ladder.x;
+  climb.player.y = ladder.bottom - 1;
+  const y = climb.player.y;
+  tick(climb, 1);
+  assert.ok(climb.player.y < y, "up input climbs the ladder");
+});
 test("loot pity guarantees legendary; weights cover low and high roll", () => {
   assert.equal(rollLoot(19, defaultConfig, () => 0).skin.rarity, "LEGENDARY");
   assert.equal(rollLoot(0, defaultConfig, () => 0).skin.rarity, "COMMON");

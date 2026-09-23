@@ -1,7 +1,8 @@
 import {drawSnake} from "./snake-art.js";
 import { worlds } from "/shared/content.js";
 const platformArt = typeof Image === "undefined" ? {} : Object.fromEntries(
-  [["valley", "/assets/platformer/valley.webp"], ["terrain", "/assets/platformer/grass-stone.webp"], ["chest", "/assets/platformer/chest.webp"]]
+  [["valley", "/assets/platformer/valley.webp"], ["terrain", "/assets/platformer/grass-stone.webp"], ["chest", "/assets/platformer/chest.webp"],
+   ...["animations","blue","green","yellow","black","white","purple"].map(name=>["hero-"+name,"/assets/platformer/hero-"+name+".png"])]
     .map(([name, path]) => { const image = new Image(); image.src = path; return [name, image]; }),
 );
 export function setupCanvas(canvas, w = 768, h = 544) {
@@ -78,6 +79,51 @@ function drawChest(c, chest, z) {
     c.moveTo(x+w-z*.12,y+z*.06);c.lineTo(x+z*.12,y+z*.76);c.stroke();
     rect(c,x+z*.42,y+z*.33,z*.2,z*.22,"#fbd36a");
   }
+  c.restore();
+}
+function drawLandmark(c,z,world,ruins=false) {
+  // Same silhouette and ground position in every era; only its architecture changes.
+  const x=15.1*z,y=7.2*z;
+  c.save();c.globalAlpha=.88;
+  const block=(dx,dy,w,h,col)=>rect(c,x+dx*z,y+dy*z,w*z,h*z,col);
+  if (world===0 && !ruins) {
+    block(0,1.2,4.9,1.9,"#94929b");block(.6,-.2,1.1,3.3,"#b2a7a4");block(3.2,-.8,1.1,3.9,"#b2a7a4");
+    block(.5,-.4,1.3,.28,"#c0676a");block(3.1,-1,1.3,.28,"#c0676a");
+    block(2.1,1.7,.8,1.4,"#4a526b");
+  } else if(world===0) {
+    block(0,2.2,4.9,.9,"#747e8c");block(.6,.3,.8,2.8,"#848593");block(3.2,.8,1,2.3,"#848593");
+    block(1.6,2,1.4,.3,"#555f70");block(4.3,1.3,.6,.4,"#555f70");
+  } else if(world===1) {
+    block(0,1.4,5,1.7,"#aa9580");block(.7,.4,3.7,1.2,"#aa9580");block(1.6,-.7,1.9,1.2,"#b5a289");
+    block(2,1.8,1,1.3,"#494b58");block(.2,2.1,4.6,.14,"#dfbf80");
+  } else if(world===2) {
+    block(0,1.7,5.2,1.4,"#666572");block(.5,.4,1.2,1.3,"#4e5364");block(3.5,-1.3,.7,3,"#69626b");
+    block(1.7,.9,1.7,.8,"#72717a");block(0,2.5,5.3,.15,"#e5a268");
+    for(let i=0;i<3;i++)block(3.55+i*.18,-1.8-i*.3,.6,.25,"#a4a0a466");
+  } else {
+    block(0,.8,5.1,2.3,"#334e66");block(.5,-1.2,1.4,2,"#446c83");block(3,-1.7,1.3,2.5,"#446c83");
+    block(.7,-1.2,1,.16,"#87eced");block(3.2,-1.7,.9,.16,"#87eced");
+    block(.8,1.6,3.6,.13,"#56d4e5");block(2.2,2.1,.7,1,"#253c51");
+  }
+  // The old entrance persists through every reconstruction.
+  block(2.26,2.4,.52,.65,"#242d3f");c.restore();
+}
+function drawHero(c,s,z,skin) {
+  const id=(skin.id||"").split("-").pop();
+  const name=["blue","green","yellow","black","white","purple"].includes(id)?id:"animations";
+  const sheet=platformArt["hero-"+name];
+  if (!sheet?.complete || !sheet.naturalWidth) {
+    actor(c,s.player.x*z,s.player.y*z,z,"#e84b3b",Math.floor(s.tick/5));return;
+  }
+  const climbing=(s.ladders||[]).some(l=>Math.abs(s.player.x-l.x)<.7 && s.player.y>=l.y-1 && s.player.y<l.bottom-1 && Math.abs(s.player.vy)>.02);
+  const row=climbing?4:s.player.vy<-.09?2:s.player.vy>.14?3:Math.abs(s.player.vx)>.02?1:0;
+  const frames=[7,7,2,1,5][row], speed=row===1?4:row===4?7:11;
+  const frame=Math.floor(s.tick/speed)%frames;
+  const x=s.player.x*z-.72*z,y=(s.player.y+.9)*z-2.08*z;
+  c.save();c.imageSmoothingEnabled=false;
+  if(s.facing<0){c.translate((2*s.player.x+.7)*z,0);c.scale(-1,1);}
+  c.drawImage(sheet,frame*96,row*96,96,96,x,y,2.12*z,2.12*z);
+  if(!s.medallionLost){c.fillStyle="#ffe18e";c.beginPath();c.arc((s.player.x+.35)*z,(s.player.y+.44)*z,z*.085,0,Math.PI*2);c.fill();}
   c.restore();
 }
 function background(c, w, h, color, t = 0) {
@@ -300,12 +346,15 @@ export function render(c, s, color = "#bdff70", settings = {}, skin = {}) {
   if (s.game === "platformer") {
     const camera = Math.max(0, Math.min(s.length - 24, s.player.x - 8));
     const valley=platformArt.valley, terrain=platformArt.terrain;
-    const grassWorld=s.world===0 || s.world===3;
-    if (grassWorld && valley?.complete && valley.naturalWidth) {
+    const grassWorld=s.world===0 || s.world===1;
+    if (valley?.complete && valley.naturalWidth) {
       const sourceW=Math.min(valley.width,valley.height*24/17);
       const sourceX=Math.min(valley.width-sourceW,camera/Math.max(1,s.length-24)*(valley.width-sourceW));
       c.drawImage(valley,sourceX,0,sourceW,valley.height,0,0,24*z,17*z);
-      if (s.world===3) rect(c,0,0,24*z,17*z,"#ffd58514");
+      if(s.world===1)rect(c,0,0,24*z,17*z,"#8c706244");
+      if(s.world===2)rect(c,0,0,24*z,17*z,"#3b323d99");
+      if(s.world===3)rect(c,0,0,24*z,17*z,"#07284899");
+      drawLandmark(c,z,s.world,s.level===2 || s.level===3);
     }
     c.save();
     c.translate(-camera * z, 0);
@@ -326,6 +375,19 @@ export function render(c, s, color = "#bdff70", settings = {}, skin = {}) {
               c.drawImage(terrain,0,32,128,96,(f.x+i)*z,(f.y+j)*z,z,z);
             else tile(c, (f.x + i) * z, (f.y + j) * z, z, "#30303c");
       }
+    }
+    for(const ladder of s.ladders||[]){
+      const lx=ladder.x*z, top=ladder.y*z;
+      rect(c,lx-z*.16,top,z*.12,(ladder.bottom-ladder.y)*z,"#674631");
+      rect(c,lx+z*.36,top,z*.12,(ladder.bottom-ladder.y)*z,"#674631");
+      for(let ly=ladder.y+.35;ly<ladder.bottom;ly+=.48)
+        rect(c,lx-z*.16,ly*z,z*.64,z*.13,"#ca9663");
+    }
+    if(s.level===1 && s.player.x>25 && s.player.x<48){
+      const rx=34.6*z,ry=10.5*z;
+      c.save();c.shadowColor="#5be8ff";c.shadowBlur=z*.7;c.strokeStyle=s.medallionLost?"#9bc1ff":"#78f8ff";
+      c.lineWidth=z*.15;c.beginPath();c.ellipse(rx,ry,z*.55,z*1.4,Math.sin(s.tick/17)*.12,0,Math.PI*2);c.stroke();c.restore();
+      if(!s.medallionLost)actor(c,35.6*z,12.35*z,z,"#96a9e6",0);
     }
     for (const chest of s.chests || []) drawChest(c,chest,z);
     for (const key of s.keys || []) if (!key.taken) {
@@ -380,15 +442,22 @@ export function render(c, s, color = "#bdff70", settings = {}, skin = {}) {
       gem(c, b.x * z, b.y * z, z * 0.35, "#fca568");
     tile(c, (s.length - 2) * z, 12 * z, z, worlds[s.world].accent);
     rect(c, (s.length - 2) * z, 11 * z, z, 2 * z, "#ffffff22");
-    if (s.tick > s.invulnerable || s.tick % 6 < 3)
-      actor(
-        c,
-        s.player.x * z,
-        s.player.y * z,
-        z,
-        color,
-        Math.floor(s.tick / 5),
-      );
+    if (s.tick > s.invulnerable || s.tick % 6 < 3) drawHero(c,s,z,skin);
+    c.restore();
+    c.save();
+    c.fillStyle="#111926c9";c.fillRect(z*.35,z*.3,z*(s.level===2?8.5:10),z*1.1);
+    c.fillStyle="#fff3cf";c.font=`bold ${Math.max(13,z*.46)}px monospace`;
+    c.fillText(s.level===2?"WORLD ???":`WORLD ${s.world+1}-${s.level===1?1:s.level}`,z*.65,z*1.03);
+    if(s.storyCue){
+      c.fillStyle="#101925ef";c.fillRect(z*.5,1.5*z,23*z,2.3*z);
+      c.strokeStyle=s.storyCue.kind==="theft"?"#7fe7f5":"#f5c875";c.lineWidth=2;
+      c.strokeRect(z*.5,1.5*z,23*z,2.3*z);
+      c.fillStyle="#fff5dd";c.font=`bold ${Math.max(13,z*.48)}px monospace`;
+      const words=s.storyCue.line.split(" "), rows=[""];
+      for(const word of words){const row=rows.length-1,test=(rows[row]?rows[row]+" ":"")+word;
+        if(c.measureText(test).width>21.5*z && rows[row]) rows.push(word); else rows[row]=test;}
+      rows.slice(0,2).forEach((line,i)=>c.fillText(line,z*1.05,z*(2.4+i*.63)));
+    }
     c.restore();
   }
   c.restore();

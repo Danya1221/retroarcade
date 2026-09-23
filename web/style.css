@@ -439,6 +439,7 @@ nav button b {
   filter: drop-shadow(0 0 7px currentColor);
 }
 .preview-player { left: 27%; color: var(--skin); font-size: 28px; }
+.preview-hero{position:absolute;left:12%;bottom:18%;width:80px;height:80px;background-image:url('/assets/platformer/hero-skins.png');background-size:700% 100%;background-position:calc(var(--hero-col) * 100% / 6) 0;image-rendering:pixelated;filter:drop-shadow(0 4px 3px #0009)}
 .preview-enemy { right: 25%; color: var(--skin-enemy); font-size: 24px; }
 .skin-unknown { position: relative; z-index: 3; color: var(--skin); text-shadow: 0 0 18px var(--skin); }
 .filters {

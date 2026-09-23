@@ -14,6 +14,11 @@ export function init(s) {
     secretFound: false,
     kills: 0,
     projectiles: [],
+    facing: 1,
+    storyIndex: 0,
+    storyQueue: [],
+    storyCue: null,
+    medallionLost: s.level !== 1,
   });
   return s;
 }
@@ -30,12 +35,16 @@ function hit(s, fall = false) {
   }
 }
 export function step(s, input) {
+  // Older active runs can be resumed after the story update.
+  s.storyQueue ||= [];
+  s.storyIndex ??= 0;
   const p = s.player,
     oldY = p.y;
   let moving = 0;
   if (input & 2) moving++;
   if (input & 8) moving--;
   p.vx = moving * 0.17;
+  if (moving) s.facing = Math.sign(moving);
   if (
     input & 16 &&
     !s.jumpWas &&
@@ -45,7 +54,12 @@ export function step(s, input) {
     s.ground = false;
   }
   s.jumpWas = !!(input & 16);
-  p.vy = Math.min(p.vy + 0.024, 0.6);
+  const ladder=(s.ladders||[]).find(l=>Math.abs(p.x-l.x)<.7 && p.y+0.9>=l.y-.2 && p.y<=l.bottom);
+  const climbing=ladder && (input&1 || input&4);
+  if (climbing) {
+    p.vy=(input&1 ? -.13 : 0)+(input&4 ? .13 : 0);
+    p.x+=(ladder.x-p.x)*.18;
+  } else p.vy = Math.min(p.vy + 0.024, 0.6);
   p.x = Math.max(0, Math.min(s.length - 1, p.x + p.vx));
   p.y += p.vy;
   // Treasure chests are struck from underneath. A chained chest stays shut
@@ -59,6 +73,8 @@ export function step(s, input) {
     s.score += chest.locked ? 180 : 80;
     if (chest.locked) s.boxes++;
     else if (s.hp < 4 && s.chests.indexOf(chest) % 3 === 0) s.hp++;
+    if (chest.locked && s.chests.indexOf(chest) === 1)
+      s.storyQueue.push({line:["На дне сундука — обрывок карты той же долины.","Метка стоит там, где в другую эпоху был замок."][s.world%2],kind:"clue"});
     p.vy = 0.05;
   }
   s.ground = false;
@@ -83,6 +99,16 @@ export function step(s, input) {
   }
   if (p.y > 18) hit(s, true);
   if (s.over) return;
+  const event=s.events?.[s.storyIndex];
+  if (event && p.x >= event.x && (event.kind!=="encounter" || !s.enemies.some(e=>e.type==="boss"))) {
+    s.storyIndex++;
+    for (const line of event.lines) s.storyQueue.push({line,kind:event.kind});
+    if (event.kind==="theft") s.medallionLost=true;
+  }
+  if (!s.storyCue || s.tick>=s.storyCue.until) {
+    const next=s.storyQueue.shift();
+    s.storyCue=next?{...next,until:s.tick+100}:null;
+  }
   if (s.boss && p.x > s.length - 16 && !s.arenaEntered) {
     s.arenaEntered = true;
     s.hp = 4;

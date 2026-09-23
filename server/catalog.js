@@ -12,6 +12,9 @@ export async function catalog(c) {
     ...(defaults.skins.find((x) => x.id === item.id) || {}),
     ...item,
   }));
+  // Persistent admin catalogs created before a release still receive new skins.
+  for (const skin of defaults.skins)
+    if (!merged.skins.some(item => item.id === skin.id)) merged.skins.push(structuredClone(skin));
   return merged;
 }
 export function validateCatalog(value) {

@@ -1,6 +1,6 @@
 import { tick } from "/shared/engine.js";
 import { render, setupCanvas } from "./render.js";
-import { sound, music, silence } from "./audio.js";
+import { sound, music, silence, warpMusic } from "./audio.js";
 export async function play(session, api, settings, skin, onExit, onResult, toast, multiplayer = null) {
   if(session.state.game==="snake")await (await import("./snake-art.js")).loadSnakeArt();
   const color = skin?.color || "#bdff70";
@@ -207,8 +207,14 @@ export async function play(session, api, settings, skin, onExit, onResult, toast
         tapQueue = 0;
         if (multiplayer && performance.now()-mpLastSend>65) { mpLastSend=performance.now(); const st=state.game==="racer"?{x:state.x,speed:state.speed,distance:state.distance,lap:state.lap}:{x:state.player.x,y:state.player.y,dir:state.player.dir,hp:state.player.hp,shots:state.shots.filter(q=>!q.enemy).slice(-12)}; api("/multiplayer/input",{id:multiplayer.roomId,seq:++mpSeq,input,state:st,score:state.score,finished:state.over}).catch(()=>{}); }
         const score = state.score,
-          hp = state.hp;
+          hp = state.hp,
+          storyIndex = state.storyIndex;
         tick(state, input);
+        if (state.game === "platformer" && state.storyIndex !== storyIndex &&
+            ["rift","theft","encounter","reveal"].includes(state.events?.[storyIndex]?.kind)) {
+          warpMusic();
+          sound("rift", settings);
+        }
         inputs.push(input);
         if (state.game !== "snake") swipe = 0;
         if (state.score > score) sound("pickup", settings);
