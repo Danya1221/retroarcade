@@ -529,3 +529,52 @@
 .game-snake.play-shell.is-mobile .dpad button{width:100%;height:100%;min-width:0;min-height:0;padding:0}
 .game-snake.play-shell.is-mobile .action-buttons{gap:10px}
 .game-snake.play-shell.is-mobile .action{width:min(22vw,130px)!important;height:min(22vw,130px)!important;transform:none}
+
+/* The vault and every secondary tab share the room's navy, amber and pixel trim. */
+.arcade-shell:not(.reference-home){background:#060911 url('/assets/retro-ui/v2/arcade-room.webp') center top/cover fixed;color:#f5eadb}
+.arcade-shell:not(.reference-home) .sidebar{background:#080c18ed;border-right:2px solid #69472e}
+.arcade-shell:not(.reference-home) .console-screen-shell{background:linear-gradient(145deg,#101727ed,#090d19f5);border-color:#ae7747;box-shadow:inset 0 0 0 7px #05080e,0 14px 50px #0009}
+.arcade-shell:not(.reference-home) .topbar{background:#080c18e9;border-bottom:1px solid #95613b}
+.arcade-shell:not(.reference-home) .eyebrow{color:#f7a855;letter-spacing:.14em}
+.arcade-shell:not(.reference-home) h2,.arcade-shell:not(.reference-home) h3{color:#ffe2aa;text-shadow:2px 3px #06070e}
+.arcade-shell:not(.reference-home) .panel,.arcade-shell:not(.reference-home) .skin,.arcade-shell:not(.reference-home) .stat{background:#0d1423eb;border:1px solid #485271;box-shadow:inset 0 0 0 2px #070a12,0 9px 22px #0008}
+.arcade-shell:not(.reference-home) button.primary{background:#eea342;border-color:#ffd27e;color:#20120a}
+.arcade-shell:not(.reference-home) nav button.active,.arcade-shell:not(.reference-home) .filters button.active{color:#ffd27e;background:#43291f;border-color:#f1a34c}
+.arcade-shell:not(.reference-home) .skin-preview{border-color:#98683e}
+.arcade-shell:not(.reference-home) .wallet-coin{color:#ffd178}
+.reference-nav button.active{background:linear-gradient(#55332280,#21172350);border-bottom:3px solid #ff9837;color:#ffd064}
+.reference-loot .loot-sprite{position:relative;display:grid;place-items:center;flex:none;width:112px;height:100px;overflow:visible}
+.reference-loot .loot-sprite img{position:static;width:100%;height:100%;object-fit:contain;max-width:100%;filter:drop-shadow(0 5px 7px #08040790)}
+.case-shop{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;max-width:none;margin-top:25px}
+.case-card{--tier:#ecab54;--halo:#ecab543a;display:flex;flex-direction:column;min-width:0;min-height:0;background:linear-gradient(#1b2033,#101522);border:2px solid var(--tier);border-radius:13px;box-shadow:inset 0 0 0 4px #070b14,0 14px 30px #0008}
+.case-card.tier-rare{--tier:#69bafa;--halo:#4199ff55}
+.case-card.tier-epic{--tier:#b58afa;--halo:#8c42e855}
+.case-card.tier-legendary{--tier:#ffc350;--halo:#f5a12666}
+.case-visual{height:215px;flex:none;display:grid;place-items:center;border:0;border-bottom:1px solid var(--tier);background:radial-gradient(ellipse,var(--halo),transparent 65%),linear-gradient(#141c2b,#0a101d)}
+.case-visual:before{pointer-events:none;background:repeating-linear-gradient(0deg,transparent 0 5px,#0002 6px)}
+.case-visual img{position:relative;z-index:1;width:min(72%,200px);height:195px;object-fit:contain;filter:drop-shadow(0 11px 12px #0009)}
+.case-info{padding:21px 24px 25px;flex:1;align-items:stretch}
+.case-info small{color:var(--tier);font:bold 12px monospace;letter-spacing:.14em}
+.case-info h3{margin:5px 0 9px;font:900 24px monospace;color:#fff0ca}
+.case-info p{min-height:45px;margin-bottom:6px;color:#c6cbd7;line-height:1.4}
+.case-price{margin:8px 0 16px;color:#ffd575}
+.case-actions{display:flex;gap:10px}
+.case-actions button{flex:1;min-width:0;padding:11px 5px;font:800 12px monospace;white-space:nowrap}
+.vault-intro,.vault-footnote{max-width:690px;color:#b8c3d3;line-height:1.5}
+.reveal-chest{display:block;width:170px;height:170px;object-fit:contain;margin:auto;filter:drop-shadow(0 0 20px #faac5899)}
+@media(max-width:760px){
+ .arcade-shell:not(.reference-home) .console-screen-shell{padding:25px 13px 100px!important;border-radius:14px!important}
+ .arcade-shell:not(.reference-home) .mobile-arcade-nav{background:#080c18f5;border-top:2px solid #c98643}
+ .case-shop{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ .case-visual{height:135px}
+ .case-visual img{height:125px;width:92%}
+ .case-info{padding:12px 9px 14px}
+ .case-info small{font-size:9px}
+ .case-info h3{font-size:16px}
+ .case-info p{font-size:11px;min-height:62px}
+ .case-price{font-size:17px;margin:5px 0 9px}
+ .case-actions{flex-direction:column;gap:6px}
+ .case-actions button{font-size:10px;padding:8px 3px}
+ .reference-loot .loot-sprite{width:76px;height:70px;flex:0 0 76px}
+ .reference-loot .loot-sprite img{width:100%;height:100%;position:static;max-width:100%}
+}

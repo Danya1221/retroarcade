@@ -161,8 +161,12 @@ export function rollLoot(
   settings,
   rand = (n) => randomInt(n),
   skinList = skins,
+  minimumRarity = "COMMON",
 ) {
-  const weighted = Object.entries(settings.lootWeights);
+  const order = ["COMMON", "RARE", "EPIC", "LEGENDARY"];
+  const weighted = Object.entries(settings.lootWeights).filter(
+    ([rarity]) => order.indexOf(rarity) >= order.indexOf(minimumRarity) && skinList.some((skin) => skin.rarity === rarity),
+  );
   let rarity = "LEGENDARY";
   const audit = { pityBefore: pity, pityTriggered: pity + 1 >= settings.pity };
   if (!audit.pityTriggered) {

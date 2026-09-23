@@ -134,7 +134,7 @@ function hub() {
     ${data.active?`<div class="notice row"><span>Сохранённый забег · ${esc(data.active.game)}</span><button id="resume">Продолжить</button><button id="abandon">Завершить</button></div>`:''}
     <div class="reference-content"><div class="reference-grid">${cards.map((g,i)=>`<button class="reference-card" data-play="${g.id}" style="--col:${i%3};--row:${Math.floor(i/3)};--edge:${g.color||'#879db8'}" ${g.enabled?'':'disabled'}><span class="reference-cover"></span><b>${labels[g.id]}</b><small>${g.id==='platformer'?'LV '+Math.min(9,data.user.progress):'BEST '+(data.user.stats['best-'+g.id]||0)}</small></button>`).join('')}<button class="reference-card" id="more-games" style="--col:2;--row:1;--edge:#8993a2"><span class="reference-cover"></span><b>MORE GAMES</b></button></div>
     <aside class="reference-shortcuts"><button data-dest="collection"><span class="shortcut-art inventory-art"></span><span>INVENTORY</span></button><button data-dest="profile"><span class="shortcut-art trophy-art"></span><span>ACHIEVEMENTS</span></button><button data-dest="cases"><span class="shortcut-art shop-art"></span><span>SHOP</span></button><button data-dest="challenges"><span class="shortcut-art tasks-art"></span><span>DAILY TASKS</span></button></aside></div>
-    <button class="reference-loot" id="loot-banner"><span class="loot-sprite"><img src="/assets/retro-ui/IMG_9418.png" alt=""></span><span><b>RANDOM LOOTBOX</b><small>New skins. New surprises.</small></span><strong>›</strong></button>
+    <button class="reference-loot" id="loot-banner"><span class="loot-sprite"><img src="/assets/loot/arcade.webp" alt="Аркадный сундук"></span><span><b>RANDOM LOOTBOX</b><small>Сундуки и новые скины</small></span><strong>›</strong></button>
     <nav class="reference-nav" aria-label="Навигация меню">${[['games','HOME','nav-home'],['leaderboard','LEADERBOARD','nav-score'],['collection','COLLECTION','nav-skins'],['profile','PROFILE','nav-profile']].map(([dest,label,icon])=>`<button data-dest="${dest}" class="${dest==='games'?'active':''}"><i class="nav-sprite ${icon}"><img src="/assets/retro-ui/IMG_9419.png" alt=""></i><span>${label}</span></button>`).join('')}</nav>
     ${data.user.admin?'<button class="reference-admin" data-dest="admin">ADMIN</button>':''}
   </section>`;
@@ -145,8 +145,8 @@ function hub() {
   if(data.active){$('#resume').onclick=()=>launch(data.active);bind('#abandon',async()=>{const r=await api('/session/sync',{id:data.active.id,version:data.active.version,inputs:[],finish:true});if(r.conflict)throw Error('Забег изменился. Обнови страницу');await refresh();hub();});}
 }
 
-const boxes = () =>
-  data.inventory.find((x) => x.item === "arcade")?.quantity || 0;
+const boxes = (type = "arcade") =>
+  data.inventory.find((x) => x.item === type)?.quantity || 0;
 async function start(game, level = 1, daily = false) {
   if (data.active) {
     toast("Сначала продолжи или заверши сохранённый забег");
@@ -227,10 +227,9 @@ async function launch(session, multiplayer = null) {
   );
 }
 function cases() {
-  const count=boxes(), price=100;
-  $("#page").innerHTML=`<div class="eyebrow">ARCADE VAULT</div><div class="section-heading"><h2>Кейсы</h2><span class="wallet-coin">● ${data.user.coins || 0} МОНЕТ</span></div><div class="case-shop"><article class="case-card"><div class="case-visual"><i></i><b>?</b><span>RETRO<br>CASE</span></div><div class="case-info"><small>БАЗОВЫЙ КЕЙС</small><h3>UNKNOWN SIGNAL</h3><p>Случайный скин. Чем выше редкость — тем реже сигнал.</p><div class="case-price">● ${price}</div><button id="buy-case" class="primary" ${(data.user.coins||0)<price?"disabled":""}>КУПИТЬ КЕЙС</button></div></article></div><div class="panel row case-owned"><div><div class="eyebrow">ИНВЕНТАРЬ</div><h3>Кейсов: ${count}</h3></div><button id="open-case" ${count?"":"disabled"}>ОТКРЫТЬ</button></div>`;
-  bind("#buy-case", async()=>{await api("/loot/buy",{});await refresh();cases()});
-  bind("#open-case", openBox);
+  $("#page").innerHTML=`<div class="eyebrow">ARCADE VAULT / SHOP</div><div class="section-heading"><h2>Сундуки</h2><span class="wallet-coin">● ${data.user.coins || 0} МОНЕТ</span></div><p class="vault-intro">Выбери редкость. В каждом сундуке один скин: редкий и выше, эпический и выше или гарантированно легендарный.</p><div class="case-shop">${data.lootBoxes.map(box=>`<article class="case-card tier-${box.id}"><div class="case-visual"><img src="/assets/loot/${box.id}.webp" alt="Сундук ${esc(box.name)}"></div><div class="case-info"><small>${box.rarity} / ${esc(box.name)}</small><h3>${esc(box.name)}</h3><p>${esc(box.description)}</p><div class="case-price">● ${box.price}</div><div class="case-actions"><button class="primary" data-buy-box="${box.id}" ${(data.user.coins||0)<box.price?"disabled":""}>КУПИТЬ</button><button data-open-box="${box.id}" ${boxes(box.id)?"":"disabled"}>ОТКРЫТЬ ${boxes(box.id)?`· ${boxes(box.id)}`:""}</button></div></div></article>`).join("")}</div><p class="vault-footnote">Монеты выдаются за забеги. Повторный скин превращается в осколки. Бесплатные сундуки из испытаний имеют случайную редкость.</p>`;
+  bind("[data-buy-box]", async(el)=>{await api("/loot/buy",{type:el.dataset.buyBox});await refresh();cases();toast("Сундук добавлен в инвентарь")});
+  bind("[data-open-box]", el=>openBox(el.dataset.openBox));
 }
 function collection(filter = "ALL") {
   $("#page").innerHTML =
@@ -259,16 +258,18 @@ function collection(filter = "ALL") {
     collection(filter);
   });
 }
-async function openBox() {
-  let id = localStorage.getItem("pending-loot");
-  if (!id) {
-    id = crypto.randomUUID();
-    localStorage.setItem("pending-loot", id);
+async function openBox(type = "arcade") {
+  let pending;
+  try { pending = JSON.parse(localStorage.getItem("pending-loot")); } catch { pending = localStorage.getItem("pending-loot"); }
+  if (typeof pending === "string") pending = { id: pending, type: "arcade" };
+  if (!pending?.id) {
+    pending = { id: crypto.randomUUID(), type };
+    localStorage.setItem("pending-loot", JSON.stringify(pending));
   }
-  const result = await api("/loot/open", { id });
+  const result = await api("/loot/open", pending);
   localStorage.removeItem("pending-loot");
   const d = modal(
-    '<div class="loot-reveal"><div class="cartridge">▣</div><h2>READING CARTRIDGE…</h2></div><button id="skip-loot">Пропустить</button>',
+    `<div class="loot-reveal"><img class="reveal-chest" src="/assets/loot/${result.type || 'arcade'}.webp" alt=""><h2>Открываем сундук…</h2></div><button id="skip-loot">Пропустить</button>`,
   );
   let shown = false;
   const reveal = async () => {

@@ -96,6 +96,23 @@ test("transactional API integration", async (t) => {
       );
     },
   );
+  await t.test("rarity chests charge once and guarantee their listed tier", async () => {
+    await pool.query("UPDATE users SET coins=5000 WHERE id=1");
+    const before = (await call("/api/me")).user.coins;
+    for (const [type, price, rank] of [["rare",250,1],["epic",600,2],["legendary",1200,3]]) {
+      const bought = await call("/api/loot/buy", { type });
+      assert.equal(bought.price, price);
+      assert.equal((await call("/api/me")).inventory.find((x) => x.item === type)?.quantity, 1);
+      const id = randomUUID();
+      const opened = await call("/api/loot/open", { id, type });
+      assert.ok(["COMMON","RARE","EPIC","LEGENDARY"].indexOf(opened.skin.rarity) >= rank);
+      assert.deepEqual(await call("/api/loot/open", { id, type }), opened);
+      await assert.rejects(() => call("/api/loot/open", { id: randomUUID(), type }));
+    }
+    assert.equal((await call("/api/me")).user.coins, before - 2050);
+    await assert.rejects(() => call("/api/loot/buy", { type: "unknown" }));
+    await assert.rejects(() => call("/api/loot/open", { id: randomUUID(), type: "unknown" }));
+  });
   await t.test("ownership enforced and locked campaign rejected", async () => {
     await assert.rejects(() =>
       call("/api/skin/equip", { skin: "platformer-secret" }),

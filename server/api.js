@@ -16,6 +16,7 @@ import {
 import { createGame, replay } from "../shared/engine.js";
 import { levels } from "../games/platformer/levels.js";
 import { ApiError } from "./errors.js";
+import { lootBoxes } from "../shared/loot.js";
 export { ApiError } from "./errors.js";
 const fail = (status, msg) => {
   throw new ApiError(status, msg);
@@ -154,6 +155,7 @@ export async function api(req, path, b, q) {
       ),
       owned: owned.rows.map((x) => x.skin),
       inventory: inv.rows,
+      lootBoxes,
       achievements: achievements.map((a) =>
         a.hidden && !awards.rows.some((x) => x.achievement === a.id)
           ? { id: a.id, hidden: true }
@@ -339,17 +341,21 @@ export async function api(req, path, b, q) {
     });
   }
   if (method === "POST" && path === "/api/loot/buy") {
+    const choice = lootBoxes.find((x) => x.id === (b.type || "arcade"));
+    if (!choice) fail(400, "Неизвестный сундук");
     return transaction(async (c) => {
       const u = await lockedUser(c, user.id);
-      const price = 100;
+      const price = choice.price;
       if ((u.coins || 0) < price) fail(400, "Недостаточно монет");
       await c.query("UPDATE users SET coins=coins-$2 WHERE id=$1", [u.id, price]);
-      await box(c, u.id, "arcade", 1);
-      return { ok: true, price };
+      await box(c, u.id, choice.id, 1);
+      return { ok: true, price, type: choice.id };
     });
   }
   if (method === "POST" && path === "/api/loot/open") {
     if (!uuid(b.id)) fail(400, "Неверный идентификатор открытия");
+    const choice = lootBoxes.find((x) => x.id === (b.type || "arcade"));
+    if (!choice) fail(400, "Неизвестный сундук");
     return transaction(async (c) => {
       const u = await lockedUser(c, user.id),
         prior = await c.query(
@@ -362,26 +368,26 @@ export async function api(req, path, b, q) {
       }
       const cfg = await config(c),
         removed = await c.query(
-          "UPDATE inventory SET quantity=quantity-1 WHERE user_id=$1 AND item='arcade' AND quantity>0 RETURNING quantity",
-          [u.id],
+          "UPDATE inventory SET quantity=quantity-1 WHERE user_id=$1 AND item=$2 AND quantity>0 RETURNING quantity",
+          [u.id, choice.id],
         );
       if (!removed.rowCount) fail(400, "Нет картриджей");
-      const { skin, audit } = rollLoot(u.pity, cfg, undefined, skins);
+      const { skin, audit } = rollLoot(u.pity, cfg, undefined, skins, choice.rarity);
       const inserted = await c.query(
         "INSERT INTO user_skins(user_id,skin) VALUES($1,$2) ON CONFLICT DO NOTHING RETURNING skin",
         [u.id, skin.id],
       );
       const duplicate = !inserted.rowCount,
         shards = duplicate ? cfg.compensation[skin.rarity] : 0,
-        result = { skin, duplicate, shards };
+        result = { skin, duplicate, shards, type: choice.id };
       await c.query("UPDATE users SET shards=shards+$2,pity=$3 WHERE id=$1", [
         u.id,
         shards,
         skin.rarity === "LEGENDARY" ? 0 : u.pity + 1,
       ]);
       await c.query(
-        "INSERT INTO loot_drops(id,user_id,box,result) VALUES($1,$2,'arcade',$3)",
-        [b.id, u.id, { ...result, audit }],
+        "INSERT INTO loot_drops(id,user_id,box,result) VALUES($1,$2,$3,$4)",
+        [b.id, u.id, choice.id, { ...result, audit }],
       );
       return result;
     });
