@@ -157,9 +157,9 @@ export function drawSnake(c, s, z, skin, settings) {
   for (const [i, p] of s.walls.entries())
     sprite(c, 12 + (i % 3), p.x, p.y, z, 0, 0.94);
   for (const p of s.moving || []) sprite(c, 14, p.x, p.y, z, 0, 0.94);
-  if (s.bonus) sprite(c, 15, s.bonus.x, s.bonus.y, z, 0, 0.85);
+  if (s.bonus) sprite(c, 15, s.bonus.x, s.bonus.y, z, 0, 1.2);
   if (s.food)
-    sprite(c, 4 + ((s.eaten || 0) % 8), s.food.x, s.food.y, z, 0, 0.82);
+    sprite(c, 4 + ((s.eaten || 0) % 8), s.food.x, s.food.y, z, 0, 1.25);
   const body = s._visualBody || s.body;
   c.save();
   if (skin?.theme && skin.theme !== "base") {
